@@ -10,7 +10,7 @@ import { ParticlesBackground } from "@/components/particles-background"
 
 export default function LandingPage() {
   return (
-    <div className="bg-gray-950 text-gray-50 antialiased">
+    <div className="bg-gray-950 text-gray-50 antialiased selection:bg-cyan-500/30">
       <ParticlesBackground />
       <Header />
       <main className="relative z-10">
