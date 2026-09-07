@@ -1,144 +1,121 @@
 "use client"
 
-import type React from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { motion } from "framer-motion"
+import { Gauge, Layers, Rocket, Workflow } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 
-import { Card, CardContent } from "@/components/ui/card"
-import { motion, useInView, useMotionValue, useSpring, useTransform } from "framer-motion"
-import { useRef, type MouseEvent } from "react"
-import CountUp from "react-countup"
-
-const stats = [
-  { value: 60, suffix: "%", label: "Max Cloud Cost Reduction" },
-  { value: 99.99, suffix: "%", decimals: 2, label: "Uptime Achieved" },
-  { value: 30, suffix: " Days", label: "To See Tangible Results" },
-  { value: 80, suffix: "%", label: "Faster Deployment Cycles" },
+const outcomes: {
+  icon: LucideIcon
+  title: string
+  description: string
+}[] = [
+  {
+    icon: Gauge,
+    title: "Leaner cloud bills",
+    description:
+      "Find idle and oversized resources, tidy storage tiers, and align commitments with real usage patterns.",
+  },
+  {
+    icon: Layers,
+    title: "Clearer reliability posture",
+    description:
+      "Meaningful alerts, actionable runbooks, and a shared language for incidents — fewer pages that go nowhere.",
+  },
+  {
+    icon: Rocket,
+    title: "Faster, safer releases",
+    description:
+      "Pipelines and environments your developers trust, so shipping stops feeling like a weekend event.",
+  },
+  {
+    icon: Workflow,
+    title: "Knowledge left behind",
+    description:
+      "Docs, diagrams, and pairing so improvements survive after the engagement — not a black box of magic scripts.",
+  },
 ]
 
-const containerVariants = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.15,
-    },
+const exampleFocus = [
+  {
+    label: "Example focus",
+    title: "Spend & capacity review",
+    body: "Map the top cost drivers, flag obvious waste, and hand you a prioritized fix list your team can execute or we can implement together.",
   },
-}
-
-const itemVariants = {
-  hidden: { opacity: 0, scale: 0.8, y: 50 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    transition: {
-      type: "spring",
-      stiffness: 100,
-      damping: 15,
-    },
+  {
+    label: "Example focus",
+    title: "Delivery & observability tune-up",
+    body: "Tighten CI stages, stabilize environments, and replace noisy alerts with signals that match how you actually operate.",
   },
-}
-
-function AnimatedCard({ children }: { children: React.ReactNode }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const x = useMotionValue(0)
-  const y = useMotionValue(0)
-
-  const mouseXSpring = useSpring(x, { stiffness: 300, damping: 30 })
-  const mouseYSpring = useSpring(y, { stiffness: 300, damping: 30 })
-
-  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["10deg", "-10deg"])
-  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-10deg", "10deg"])
-
-  const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
-    if (!ref.current) return
-    const rect = ref.current.getBoundingClientRect()
-    x.set((e.clientX - rect.left) / rect.width - 0.5)
-    y.set((e.clientY - rect.top) / rect.height - 0.5)
-  }
-
-  const handleMouseLeave = () => {
-    x.set(0)
-    y.set(0)
-  }
-
-  return (
-    <motion.div
-      ref={ref}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      style={{
-        rotateX,
-        rotateY,
-        transformStyle: "preserve-3d",
-      }}
-      className="relative h-full"
-    >
-      {children}
-    </motion.div>
-  )
-}
+]
 
 export function ResultsSection() {
-  const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, margin: "-100px" })
-
   return (
     <section id="results" className="py-16 md:py-24">
       <div className="container mx-auto px-4 md:px-6">
         <div className="text-center max-w-3xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Proven Results, Real Impact</h2>
-          <p className="mt-4 text-lg text-gray-400">
-            We don't just promise—we deliver. Our strategies translate into measurable improvements for your business.
+          <p className="text-sm font-semibold uppercase tracking-widest text-cyan-400/90 mb-3">Outcomes</p>
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-balance">
+            What better looks like in practice
+          </h2>
+          <p className="mt-4 text-lg text-gray-400 text-pretty">
+            We measure success by operational clarity and sustainable improvements — not vanity dashboards or inflated
+            percentages.
           </p>
         </div>
-        <motion.div
-          ref={ref}
-          variants={containerVariants}
-          initial="hidden"
-          animate={isInView ? "visible" : "hidden"}
-          className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4"
-        >
-          {stats.map((stat) => (
-            <motion.div key={stat.label} variants={itemVariants} className="h-full">
-              <AnimatedCard>
-                <Card className="bg-gray-900/50 border-gray-800 text-center h-full backdrop-blur-sm relative overflow-hidden">
-                  <div
-                    className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                    style={{ transform: "translateZ(-10px)" }}
-                  />
-                  <CardContent
-                    className="p-6 flex flex-col justify-center items-center h-full"
-                    style={{ transform: "translateZ(20px)" }}
-                  >
-                    <p className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
-                      {isInView && <CountUp end={stat.value} duration={2.5} decimals={stat.decimals || 0} />}
-                      {stat.suffix}
-                    </p>
-                    <p className="mt-2 text-gray-400">{stat.label}</p>
-                  </CardContent>
-                </Card>
-              </AnimatedCard>
+
+        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {outcomes.map((item, index) => (
+            <motion.div
+              key={item.title}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.4, delay: index * 0.07 }}
+            >
+              <Card className="bg-gray-900/55 border-gray-800 h-full backdrop-blur-sm hover:border-cyan-500/35 transition-colors">
+                <CardHeader className="pb-2">
+                  <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-400/10 ring-1 ring-cyan-400/25">
+                    <item.icon className="h-5 w-5 text-cyan-400" />
+                  </div>
+                  <CardTitle className="text-base font-semibold text-gray-100">{item.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-400 leading-relaxed">{item.description}</p>
+                </CardContent>
+              </Card>
             </motion.div>
           ))}
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="mt-16"
-        >
-          <AnimatedCard>
-            <Card className="bg-gray-900/50 border-gray-800 max-w-3xl mx-auto relative overflow-hidden backdrop-blur-sm">
-              <CardContent className="p-8 relative z-10" style={{ transform: "translateZ(20px)" }}>
-                <blockquote className="text-center text-xl italic text-gray-300">
-                  "ReDevOps transformed our infrastructure. We're saving over 40% on our AWS bill and our systems have
-                  never been more stable. Their team integrated seamlessly with ours."
-                </blockquote>
-                <p className="text-center mt-4 font-semibold text-cyan-400">— CTO, Fast-Growth SaaS Startup</p>
-              </CardContent>
-            </Card>
-          </AnimatedCard>
-        </motion.div>
+        </div>
+
+        <div className="mt-12 grid gap-6 md:grid-cols-2 max-w-4xl mx-auto">
+          {exampleFocus.map((ex, index) => (
+            <motion.div
+              key={ex.title}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.45, delay: 0.1 + index * 0.08 }}
+            >
+              <Card className="bg-gradient-to-br from-gray-900/80 to-gray-900/40 border-gray-800 h-full relative overflow-hidden">
+                <div
+                  aria-hidden
+                  className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent"
+                />
+                <CardContent className="p-6 md:p-8">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-purple-300/90">{ex.label}</p>
+                  <h3 className="mt-2 text-xl font-bold text-gray-100">{ex.title}</h3>
+                  <p className="mt-3 text-gray-400 leading-relaxed">{ex.body}</p>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+
+        <p className="mt-8 text-center text-sm text-gray-500 max-w-2xl mx-auto">
+          Results depend on your starting point, architecture, and how quickly recommendations are adopted. We set
+          expectations in the first conversation — no fabricated case-study numbers.
+        </p>
       </div>
     </section>
   )

@@ -6,11 +6,51 @@ import { cn } from "@/lib/utils"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
+const siteUrl = "https://redevops.dev"
+
 export const metadata: Metadata = {
-  title: "ReDevOps | Cloud Cost Optimization & Infrastructure Reliability",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "ReDevOps | DevOps Consulting for Cloud Cost & Reliability",
+    template: "%s | ReDevOps",
+  },
   description:
-    "Reduce cloud costs by 30-60% and build unbreakable infrastructure with ReDevOps consulting. See results in 30 days.",
-    generator: 'v0.dev'
+    "ReDevOps helps growing product teams cut cloud waste, harden infrastructure, and ship with confidence. Hands-on DevOps consulting by Recep — AWS, GCP, Azure, CI/CD, and SRE.",
+  keywords: [
+    "DevOps consulting",
+    "cloud cost optimization",
+    "SRE",
+    "CI/CD",
+    "infrastructure reliability",
+    "AWS",
+    "GCP",
+    "Azure",
+    "ReDevOps",
+  ],
+  authors: [{ name: "Recep", url: siteUrl }],
+  creator: "ReDevOps",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: siteUrl,
+    siteName: "ReDevOps",
+    title: "ReDevOps | DevOps Consulting for Cloud Cost & Reliability",
+    description:
+      "Hands-on DevOps consulting that reduces cloud waste, improves reliability, and accelerates delivery — without disrupting your team.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ReDevOps | DevOps Consulting for Cloud Cost & Reliability",
+    description:
+      "Hands-on DevOps consulting that reduces cloud waste, improves reliability, and accelerates delivery.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  alternates: {
+    canonical: siteUrl,
+  },
 }
 
 export default function RootLayout({
