@@ -1,9 +1,13 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, Mail } from "lucide-react"
-
-const CONTACT_MAILTO =
-  "mailto:eksiertu@gmail.com?subject=ReDevOps%20consultation&body=Hi%20Recep%2C%0A%0AI%27d%20like%20to%20talk%20about%20..."
+import { ArrowRight, Check, Mail } from "lucide-react"
+import {
+  CALENDLY_URL,
+  CALL_EXPECTATIONS,
+  CONTACT_EMAIL,
+  CONTACT_MAILTO,
+  PRIMARY_CTA_LABEL,
+} from "@/lib/contact"
 
 export function CtaSection() {
   return (
@@ -24,14 +28,24 @@ export function CtaSection() {
           Tell us where it hurts — cost, reliability, or delivery. Your first consultation is free, and you will leave
           with a concrete next step either way.
         </p>
+        <ul className="mt-8 mx-auto max-w-xl space-y-3 text-left">
+          {CALL_EXPECTATIONS.map((item) => (
+            <li key={item} className="flex gap-3 text-gray-300 text-sm md:text-base leading-relaxed">
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-400/15 ring-1 ring-cyan-400/30">
+                <Check className="h-3 w-3 text-cyan-400" />
+              </span>
+              {item}
+            </li>
+          ))}
+        </ul>
         <div className="mt-8 flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
           <Button
             size="lg"
             asChild
             className="text-base py-6 px-8 bg-cyan-500 hover:bg-cyan-400 text-gray-950 font-semibold shadow-xl shadow-cyan-500/20"
           >
-            <Link href="https://calendly.com/eksiertu/30min" target="_blank" rel="noopener noreferrer">
-              Book a free consultation <ArrowRight className="ml-2 h-5 w-5" />
+            <Link href={CALENDLY_URL} target="_blank" rel="noopener noreferrer">
+              {PRIMARY_CTA_LABEL} <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </Button>
           <Button
@@ -42,7 +56,7 @@ export function CtaSection() {
           >
             <Link href={CONTACT_MAILTO}>
               <Mail className="mr-2 h-5 w-5" />
-              eksiertu@gmail.com
+              {CONTACT_EMAIL}
             </Link>
           </Button>
         </div>

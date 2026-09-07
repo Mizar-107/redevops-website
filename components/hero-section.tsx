@@ -6,9 +6,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Mail, Sparkles } from "lucide-react"
 import { motion } from "framer-motion"
-
-const CONTACT_MAILTO =
-  "mailto:eksiertu@gmail.com?subject=ReDevOps%20consultation&body=Hi%20Recep%2C%0A%0AI%27d%20like%20to%20talk%20about%20..."
+import { CALENDLY_URL, CONTACT_EMAIL, CONTACT_MAILTO, PRIMARY_CTA_LABEL } from "@/lib/contact"
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -76,14 +74,14 @@ export function HeroSection() {
               asChild
               className="bg-cyan-500 hover:bg-cyan-400 text-gray-950 font-semibold shadow-xl shadow-cyan-500/25"
             >
-              <Link href="https://calendly.com/eksiertu/30min" target="_blank" rel="noopener noreferrer">
-                Book a free consultation <ArrowRight className="ml-2 h-5 w-5" />
+              <Link href={CALENDLY_URL} target="_blank" rel="noopener noreferrer">
+                {PRIMARY_CTA_LABEL} <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
             <Button size="lg" variant="outline" asChild className="border-gray-700 bg-gray-950/40 hover:bg-gray-900 hover:text-cyan-300">
               <Link href={CONTACT_MAILTO}>
                 <Mail className="mr-2 h-5 w-5" />
-                Email eksiertu@gmail.com
+                Email {CONTACT_EMAIL}
               </Link>
             </Button>
           </motion.div>

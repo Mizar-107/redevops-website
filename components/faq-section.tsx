@@ -1,5 +1,6 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import Link from "next/link"
+import { CONTACT_MAILTO } from "@/lib/contact"
 
 const faqs = [
   {
@@ -39,7 +40,7 @@ export function FaqSection() {
           <p className="mt-4 text-lg text-gray-400">
             Straight answers. Still unsure?{" "}
             <Link
-              href="mailto:eksiertu@gmail.com?subject=ReDevOps%20question"
+              href={CONTACT_MAILTO}
               className="text-cyan-400 hover:underline underline-offset-4"
             >
               Email Recep
