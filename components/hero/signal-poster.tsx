@@ -87,7 +87,9 @@ export function SignalPoster({ preset }: { preset: "hero" | "horizon" }) {
         </g>
       </svg>
       {/* the anamorphic streak, as a still: a soft band plus the throughline itself */}
-      <div className="absolute inset-0" style={toRow}>
+      {/* horizon preset: the streak row is only known once the field has measured its horizonRef
+          (data-hy); until then (no JS / no WebGL) it is not drawn rather than drawn across the copy */}
+      <div className="absolute inset-0" style={toRow} data-poster-row="">
         <span
           className="absolute inset-x-0 h-24 -translate-y-1/2 forced:hidden"
           style={{

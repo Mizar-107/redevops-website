@@ -47,6 +47,8 @@ type BladeState = { anim: CSSAnimation | null; doneAt: number | null; tipEnd: nu
 
 const CUT_DONE = 1.05
 const RUNOUT_MS = DUR_MS.f4
+/** consecutive frames with nothing to draw before the loop sleeps (woken by scroll / pointer / resize) */
+const IDLE_FRAMES = 12
 
 const isBladeAnim = (a: Animation): a is CSSAnimation =>
   typeof (a as CSSAnimation).animationName === "string" && (a as CSSAnimation).animationName.includes("blade-sweep")
@@ -56,6 +58,9 @@ const isBladeAnim = (a: Animation): a is CSSAnimation =>
  * first time the instance comes within 200px of the viewport) fades in over it after its first
  * drawn frame. One rAF source (useRafWhenVisible): the loop runs only while this instance is on
  * screen, the tab is visible and motion is full. Reduced motion draws exactly one frame.
+ * Frames with nothing new to show (hero faded out; horizon collapsed on its seam with the streak
+ * below the fold) are not drawn, and after IDLE_FRAMES of them the loop sleeps until the next
+ * scroll, pointer move or resize — no rAF while the reader sits at the FAQ.
  * No WebGL / context loss → the poster stays (or comes back).
  */
 export function SignalField({ preset, progress, avoidRef, bladeRef, horizonRef, className }: SignalFieldProps) {
@@ -64,6 +69,14 @@ export function SignalField({ preset, progress, avoidRef, bladeRef, horizonRef, 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const engineRef = useRef<SignalFieldEngine | null>(null)
   const [live, setLive] = useState(false)
+  const [awake, setAwake] = useState(true)
+  const asleep = useRef(false)
+  const idle = useRef(0)
+  const lastKey = useRef("")
+  /** window.scrollY / innerHeight, cached from scroll events and measure(); never read inside the
+   *  rAF tick, where they force a synchronous style/layout */
+  const scrollY = useRef(0)
+  const viewH = useRef(0)
   const reduced = useReducedMotionSafe()
   const reducedRef = useRef(reduced)
   const geo = useRef<Geo>({
@@ -107,7 +120,9 @@ export function SignalField({ preset, progress, avoidRef, bladeRef, horizonRef, 
     g.cssW = Math.max(1, cr.width)
     g.cssH = Math.max(1, cr.height)
     g.left = cr.left
-    g.pageTop = cr.top + window.scrollY
+    scrollY.current = window.scrollY
+    viewH.current = window.innerHeight
+    g.pageTop = cr.top + scrollY.current
     g.mobile = cr.width < 768
     const hr = horizonRef?.current?.getBoundingClientRect()
     g.horizon = hr ? (hr.top + hr.height / 2 - cr.top) * dpr : (preset === "hero" ? 0.5 : 0.78) * h
@@ -119,7 +134,10 @@ export function SignalField({ preset, progress, avoidRef, bladeRef, horizonRef, 
       g.l1Left = (br.left - cr.left) / g.cssW
       g.l1W = br.width / g.cssW
     }
-    if (preset === "hero" || hr) root.style.setProperty("--hy", `${((g.flareY / h) * 100).toFixed(3)}%`)
+    if (preset === "hero" || hr) {
+      root.style.setProperty("--hy", `${((g.flareY / h) * 100).toFixed(3)}%`)
+      root.setAttribute("data-hy", "")
+    }
     const lines = preset === "horizon" ? 18 : g.cssW >= 1024 ? 48 : g.cssW >= 768 ? 32 : 20
     const segs = g.mobile ? 96 : 160
     eng?.resize(w, h, dpr, lines, segs)
@@ -168,7 +186,7 @@ export function SignalField({ preset, progress, avoidRef, bladeRef, horizonRef, 
     let ty = g.horizon
     let ts = 0
     if (p.fine && p.has && !g.mobile) {
-      const top = g.pageTop - window.scrollY
+      const top = g.pageTop - scrollY.current
       const lx = (p.cx - g.left) / g.cssW
       const ly = p.cy - top
       if (lx >= 0 && lx <= 1 && ly >= 0 && ly <= g.cssH) {
@@ -254,12 +272,64 @@ export function SignalField({ preset, progress, avoidRef, bladeRef, horizonRef, 
     fadeRef.current.style.opacity = String(r)
   }
 
+  const wake = () => {
+    idle.current = 0
+    if (!asleep.current) return
+    asleep.current = false
+    setAwake(true)
+  }
+
+  /** the hero's scroll-out fade for the current progress (0 = fully gone) */
+  const heroFade = () => 1 - smoothstep(0.88, 0.98, clamp(progress?.get() ?? 0))
+
+  /** wake on scroll only when a frame could differ (the faded-out hero has nothing to show) */
+  const wakeOnScroll = () => {
+    if (preset === "hero" && heroFade() <= 0) return
+    wake()
+  }
+
+  /** wake on pointer only when it moves over the canvas, or the lens still has to relax */
+  const wakeOnPointer = () => {
+    const g = geo.current
+    const p = ptr.current
+    if (preset === "hero" && heroFade() <= 0) return
+    const ly = p.cy - (g.pageTop - scrollY.current)
+    const over = p.cx >= g.left && p.cx <= g.left + g.cssW && ly >= 0 && ly <= g.cssH
+    if (over || p.s > 0.001) wake()
+  }
+
+  /** A frame with nothing new to show: skip it, and sleep the loop once that has lasted a while. */
+  const rest = () => {
+    if (++idle.current < IDLE_FRAMES || asleep.current) return
+    asleep.current = true
+    setAwake(false)
+  }
+
+  /** horizon: true while this frame would redraw the last one exactly (nothing time-based on screen) */
+  const horizonStatic = (f: FieldFrame): boolean => {
+    const g = geo.current
+    const visBottom = (viewH.current - (g.pageTop - scrollY.current)) * g.dpr // on-screen canvas rows
+    const streakLive = f.intensity > 0.001 && g.flareY - 0.22 * g.h < visBottom // its grain moves every frame
+    const u = clamp((1 - f.collapse) / 0.7) // largest unfold (line 0)
+    const traceLive = 64 * g.dpr * u ** 5 > 0.25 // 4px·dpr·quintIn(u): the sine's time term, in px
+    const key = `${f.collapse.toFixed(4)}|${f.intensity.toFixed(3)}|${f.lens.toFixed(3)}|${Math.round(f.px)}|${Math.round(f.py)}|${g.w}x${g.h}|${g.flareY}|${g.avoid.join()}`
+    const same = key === lastKey.current
+    lastKey.current = key
+    return !streakLive && !traceLive && same
+  }
+
   const tick = (t: number, dt: number) => {
     const eng = engineRef.current
     if (!eng) return
+    if (preset === "hero") {
+      const fade = heroFade()
+      setFade(fade)
+      if (fade <= 0 && drawn.current) return rest() // scrolled out: nothing visible to draw
+    }
     stepPointer(dt)
     const f = buildFrame(t, false)
-    if (preset === "hero") setFade(1 - smoothstep(0.88, 0.98, clamp(progress?.get() ?? 0)))
+    if (preset === "horizon" && drawn.current && horizonStatic(f)) return rest() // last frame stays up
+    idle.current = 0
     if (!eng.draw(f)) return
     lastT.current = t
     markDrawn()
@@ -273,7 +343,13 @@ export function SignalField({ preset, progress, avoidRef, bladeRef, horizonRef, 
     if (eng.draw(buildFrame(0, true))) markDrawn()
   }
 
-  const { quality: rafQuality } = useRafWhenVisible(rootRef, tick, { fps: 60, adaptive: true, enabled: live })
+  const { quality: rafQuality } = useRafWhenVisible(rootRef, tick, {
+    fps: 60,
+    adaptive: true,
+    enabled: live && awake,
+    // the finale field only runs while its canvas is actually on screen
+    rootMargin: preset === "horizon" ? "0px" : undefined,
+  })
 
   /* ---------------------------------------------------------------- lazy GL init (first approach) */
   useEffect(() => {
@@ -305,6 +381,7 @@ export function SignalField({ preset, progress, avoidRef, bladeRef, horizonRef, 
               () => {
                 if (!eng.restore()) return
                 measure()
+                wake() // the loop may have been asleep when the context went
                 setLive(true)
               },
             )
@@ -336,6 +413,8 @@ export function SignalField({ preset, progress, avoidRef, bladeRef, horizonRef, 
       cancelAnimationFrame(raf)
       raf = requestAnimationFrame(() => {
         measure()
+        lastKey.current = ""
+        wake()
         if (reducedRef.current) drawStill()
       })
     }
@@ -344,6 +423,10 @@ export function SignalField({ preset, progress, avoidRef, bladeRef, horizonRef, 
     els.forEach((el) => el && ro.observe(el))
     let scrollTimer: ReturnType<typeof setTimeout> | undefined
     const onScroll = () => {
+      // read here, in the scroll event, never in the rAF tick (a forced style/layout per frame there)
+      scrollY.current = window.scrollY
+      viewH.current = window.innerHeight
+      wakeOnScroll()
       clearTimeout(scrollTimer)
       scrollTimer = setTimeout(schedule, 160)
     }
@@ -375,6 +458,7 @@ export function SignalField({ preset, progress, avoidRef, bladeRef, horizonRef, 
       p.cx = e.clientX
       p.cy = e.clientY
       p.has = true
+      if (p.fine) wakeOnPointer()
     }
     const onOut = (e: PointerEvent) => {
       if (!e.relatedTarget) p.has = false

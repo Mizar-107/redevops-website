@@ -8,13 +8,60 @@
      700–1100   the black halves part to a 2.39:1 letterbox (iris); the hairline fades f6 (exit).
                 The hairline row IS the hero horizon/streak row: match cut.
      1100–1280  hold (hero t0 = 700ms, so its slate and line 1 are already rising in the window)
-     1280–1447  bars exit off-screen (exit, f4); slate and skip button fade (f4)
+     1280–1447  bars exit off-screen (exit, f4); the slate rides out on the top bar (it is printed on
+                the leader) while it fades; the skip button fades (f4)
      1450       overlay + skip button reach visibility:hidden through fill-mode (no JS needed)
 
    html[data-intro="skip"] (any key / pointer / wheel / touch, set by the boot script): every beat
    freezes where it is, then one f4 exit — bars leave through their outer edges, type fades — and
    the overlay and button are hidden.
+
+   ONE CLOCK. Every beat animates a registered custom property (a <number> 0..1) that the element's
+   transform / opacity reads; nothing animates transform, opacity or visibility directly. Chromium
+   gives a page's first-frame animations different start times depending on how they run: animations
+   it composites (plain transform/opacity) can start 17–370ms after the main-thread ones, and a
+   constant 1ms step after a long delay started ~150–450ms early. Mixed, the blip/hairline drifted off
+   the bars and the visibility off-switch fired before the bars had exited (a hard cut instead of the
+   exit). Custom-property animations always run on the main thread, so every beat here — and the
+   hero's own main-thread intro — shares one start time. Easings stay on the animation shorthand
+   (a var() inside @keyframes would fall back to ease).
    ===================================================================================== */
+
+@property --co-part {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+@property --co-exit {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+@property --co-draw {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+@property --co-blip {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+@property --co-in {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+@property --co-out {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+@property --co-gone {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
 
 /* visibility contract: only a first, motion-full, hash-less visit in the session plays it */
 .root,
@@ -39,7 +86,7 @@ html[data-intro="skip"] .skip {
   --win-half: calc(min(88vh, 100vw / 2.39) / 2);
   /* the parked blip / exiting bars never add scrollable overflow */
   overflow: clip;
-  animation: coOff 1ms linear var(--co-off-at) forwards;
+  animation: coOff var(--co-off-at) linear forwards;
 }
 @supports (container-type: size) {
   /* measure the overlay box itself (no scrollbar / mobile toolbar mismatch) */
@@ -66,20 +113,22 @@ html[data-intro="skip"] .skip {
   top: calc(var(--seam) - 1px);
   bottom: 0;
 }
+/* part: each half travels win-half + 1px (the 2.39:1 window); exit: the rest of its own height */
 .fill {
   position: absolute;
   inset: 0;
   background: var(--ink-950);
-}
-.barTop .fill {
   animation:
-    coPartTop var(--co-part-dur) var(--ease-iris) var(--co-part-at) both,
-    coExitTop var(--f4) var(--ease-exit) var(--co-exit-at) forwards;
+    coPart var(--co-part-dur) var(--ease-iris) var(--co-part-at) both,
+    coExit var(--f4) var(--ease-exit) var(--co-exit-at) both;
+}
+/* top: −part·(win-half + 1px) − exit·(100% − win-half − 1px), written without subtracting a
+   bracketed sum (Chromium mis-simplified that form to −100% − 2·(win-half + 1px) at exit = 1) */
+.barTop .fill {
+  transform: translate3d(0, calc((var(--co-exit) - var(--co-part)) * (var(--win-half) + 1px) - var(--co-exit) * 100%), 0);
 }
 .barBot .fill {
-  animation:
-    coPartBot var(--co-part-dur) var(--ease-iris) var(--co-part-at) both,
-    coExitBot var(--f4) var(--ease-exit) var(--co-exit-at) forwards;
+  transform: translate3d(0, calc((var(--co-part) - var(--co-exit)) * (var(--win-half) + 1px) + var(--co-exit) * 100%), 0);
 }
 
 /* ---------------------------------------------------------------- light + type */
@@ -93,9 +142,11 @@ html[data-intro="skip"] .skip {
   position: absolute;
   left: 0;
   top: var(--seam);
+  transform: scaleX(var(--co-draw));
+  opacity: var(--co-out);
   animation:
     coDraw var(--co-line-dur) var(--ease-title) var(--co-line-at) both,
-    coFadeOut var(--f6) var(--ease-exit) var(--co-part-at) forwards;
+    coOut var(--f6) var(--ease-exit) var(--co-part-at) both;
 }
 
 /* the blip: an 80px hot head (plus a short trail so 90px/frame reads as one stroke, not dashes) */
@@ -106,7 +157,8 @@ html[data-intro="skip"] .skip {
   width: 320px;
   height: 11px;
   margin-top: -5px;
-  transform: translate3d(calc(-100% - 64px), 0, 0);
+  /* parked 64px past each edge, so the head's glow never peeks in before or after the run */
+  transform: translate3d(calc(-100% - 64px + var(--co-blip) * (100vw + 100% + 64px)), 0, 0);
   animation: coBlip var(--co-blip-dur) linear var(--co-blip-at) both;
 }
 .blipTrail {
@@ -161,7 +213,13 @@ html[data-intro="skip"] .skip {
   text-transform: uppercase;
   white-space: nowrap;
   color: var(--paper-mute);
-  animation: coFadeOut var(--f4) var(--ease-exit) var(--co-exit-at) forwards;
+  opacity: var(--co-out);
+  /* exits with the top bar (its thickness is seam − win-half), so it never lingers over the header
+     row the bar is uncovering */
+  transform: translate3d(0, calc(var(--co-exit) * (var(--win-half) - var(--seam))), 0);
+  animation:
+    coOut var(--f4) var(--ease-exit) var(--co-exit-at) both,
+    coExit var(--f4) var(--ease-exit) var(--co-exit-at) both;
 }
 .slateLine {
   display: block;
@@ -192,7 +250,7 @@ html[data-intro="skip"] .skip {
   background: none;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  animation: coOff 1ms linear var(--co-off-at) forwards;
+  animation: coOff var(--co-off-at) linear forwards;
 }
 .skipPill {
   display: inline-flex;
@@ -212,9 +270,10 @@ html[data-intro="skip"] .skip {
   transition:
     color 150ms linear,
     border-color 150ms linear;
+  opacity: calc(var(--co-in) * var(--co-out));
   animation:
-    coFadeIn var(--f6) var(--ease-title) var(--co-line-at) both,
-    coFadeOut var(--f4) var(--ease-exit) var(--co-exit-at) forwards;
+    coIn var(--f6) var(--ease-title) var(--co-line-at) both,
+    coOut var(--f4) var(--ease-exit) var(--co-exit-at) both;
 }
 .skipArrow {
   color: var(--signal);
@@ -242,26 +301,31 @@ html[data-intro="skip"] .fx *,
 html[data-intro="skip"] .skipPill {
   animation-play-state: paused;
 }
+html[data-intro="skip"] .bar,
+html[data-intro="skip"] .fx {
+  animation: coGone var(--co-skip) var(--ease-exit) both;
+}
 html[data-intro="skip"] .barTop {
-  animation: coSkipTop var(--co-skip) var(--ease-exit) forwards;
+  transform: translate3d(0, calc(var(--co-gone) * -100%), 0);
 }
 html[data-intro="skip"] .barBot {
-  animation: coSkipBot var(--co-skip) var(--ease-exit) forwards;
+  transform: translate3d(0, calc(var(--co-gone) * 100%), 0);
 }
-html[data-intro="skip"] .fx {
-  animation: coFadeOut var(--co-skip) var(--ease-exit) forwards;
+html[data-intro="skip"] .fx,
+html[data-intro="skip"] .skip {
+  opacity: calc(1 - var(--co-gone));
 }
 /* existing animations are matched by name and keep their clocks; the skip ones start now */
 html[data-intro="skip"] .root {
   animation:
-    coOff 1ms linear var(--co-off-at) forwards,
-    coOffSkip 1ms linear var(--co-skip) forwards;
+    coOff var(--co-off-at) linear forwards,
+    coOffSkip var(--co-skip) linear forwards;
 }
 html[data-intro="skip"] .skip {
   animation:
-    coOff 1ms linear var(--co-off-at) forwards,
-    coFadeOut var(--co-skip) var(--ease-exit) forwards,
-    coOffSkip 1ms linear var(--co-skip) forwards;
+    coOff var(--co-off-at) linear forwards,
+    coGone var(--co-skip) var(--ease-exit) both,
+    coOffSkip var(--co-skip) linear forwards;
 }
 
 /* decorative: never under forced colours or in print */
@@ -289,81 +353,71 @@ html[data-intro="skip"] .skip {
 }
 @keyframes coDraw {
   from {
-    transform: scaleX(0);
+    --co-draw: 0;
   }
   to {
-    transform: scaleX(1);
+    --co-draw: 1;
   }
 }
 @keyframes coBlip {
-  /* parked 64px past each edge, so the head's glow never peeks in before or after the run */
   from {
-    transform: translate3d(calc(-100% - 64px), 0, 0);
+    --co-blip: 0;
   }
   to {
-    transform: translate3d(100vw, 0, 0);
+    --co-blip: 1;
   }
 }
-@keyframes coPartTop {
+@keyframes coPart {
   from {
-    transform: translate3d(0, 0, 0);
+    --co-part: 0;
   }
   to {
-    transform: translate3d(0, calc(-1 * var(--win-half) - 1px), 0);
+    --co-part: 1;
   }
 }
-@keyframes coPartBot {
+@keyframes coExit {
   from {
-    transform: translate3d(0, 0, 0);
+    --co-exit: 0;
   }
   to {
-    transform: translate3d(0, calc(var(--win-half) + 1px), 0);
+    --co-exit: 1;
   }
 }
-@keyframes coExitTop {
+@keyframes coIn {
   from {
-    transform: translate3d(0, calc(-1 * var(--win-half) - 1px), 0);
+    --co-in: 0;
   }
   to {
-    transform: translate3d(0, -100%, 0);
+    --co-in: 1;
   }
 }
-@keyframes coExitBot {
+@keyframes coOut {
   from {
-    transform: translate3d(0, calc(var(--win-half) + 1px), 0);
+    --co-out: 1;
   }
   to {
-    transform: translate3d(0, 100%, 0);
+    --co-out: 0;
   }
 }
-@keyframes coSkipTop {
-  to {
-    transform: translate3d(0, -100%, 0);
-  }
-}
-@keyframes coSkipBot {
-  to {
-    transform: translate3d(0, 100%, 0);
-  }
-}
-@keyframes coFadeIn {
+@keyframes coGone {
   from {
-    opacity: 0;
+    --co-gone: 0;
   }
-}
-@keyframes coFadeOut {
   to {
-    opacity: 0;
+    --co-gone: 1;
   }
 }
+/* The off-switches run from t=0 with an implicit (underlying = visible) start keyframe: visibility
+   interpolates as "visible" until the last instant, then fills "hidden". Not written as the usual
+   1ms constant step after a long delay: Chromium starts such constant-keyframe, long-delay
+   animations in an earlier frame than the rest of the intro (measured 150–450ms early), which hid
+   the overlay before the bars had exited. Starting at 0 keeps them on the bars' clock. */
 @keyframes coOff {
-  from,
   to {
     visibility: hidden;
   }
 }
 @keyframes coOffSkip {
-  from,
   to {
     visibility: hidden;
   }

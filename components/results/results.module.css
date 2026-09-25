@@ -21,6 +21,9 @@
 }
 .noticeLabel {
   letter-spacing: 0.22em;
+  /* the pre-reveal track-in spreads the letters ±0.35em·n; on narrow phones the outer ones would
+     otherwise widen the page. Clip (not hidden: no scroll container, y stays visible). */
+  overflow-x: clip;
 }
 
 html[data-ready][data-motion="full"] .notice:not([data-inview]) .noticeRule {
@@ -67,7 +70,8 @@ html[data-ready][data-motion="full"] .rack:not([data-inview]) :global(.w):nth-of
   transition: border-color var(--f6) var(--ease-ui);
 }
 @media (hover: hover) and (pointer: fine) {
-  .scopePanel {
+  /* only when the drag can do something (no JS = no scrubbing) */
+  :global(html.js) .scopePanel {
     cursor: ew-resize;
   }
 }
@@ -102,13 +106,38 @@ html[data-ready][data-motion="full"] .rack:not([data-inview]) :global(.w):nth-of
   overflow: clip;
   will-change: transform;
 }
-.scopeWindow > .scopeLayer,
-.scopeWindowStatic > .scopeLayer {
+/* the sweep counter-transform JS writes on the feed inside each clip window */
+.scopeWindow .scopeLayer {
   will-change: transform;
 }
 .scopeWindowStatic {
   position: absolute;
   inset: 0;
+}
+/* Ambient drift: the feed flows right → left through the scanline at 40px/s, entirely on the
+   compositor (no per-frame main-thread work). .scopeDrift is an HTML box sized to the measured feed
+   (2W wide, periodic over W), so −50% is exactly one period; --drift-dur = W / 40px·s⁻¹. It sits
+   between each clip window and its SVG: the SVG's own `transform` belongs to the JS sweep, and
+   Chromium will not composite the individual `translate` property on SVG elements. Full motion +
+   measured only (SSR / no-JS / reduced stay still); the screen is a [data-loop], so the drift
+   pauses offscreen. */
+.scopeDrift {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+html[data-motion="full"] .scopeScreen[data-px] .scopeDrift {
+  animation: scope-drift var(--drift-dur, 35s) linear infinite;
+}
+@keyframes scope-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
 }
 
 /* graticule */
@@ -469,8 +498,11 @@ html[data-ready][data-motion="full"] .scopePanel:not([data-inview]) .scanBeam {
 html[data-ready][data-motion="full"] .scopePanel:not([data-inview]) .chips {
   opacity: 0;
 }
+/* draw f12 on `cut`, hold, fade f6 from f18 (split so the token easing applies; see lt-bar) */
 .scopePanel[data-inview="1"] .powerLine {
-  animation: scope-power var(--f24) linear both;
+  animation:
+    scope-power-draw var(--f12) var(--ease-cut) both,
+    scope-power-fade var(--f6) linear var(--f18) forwards;
 }
 .scopePanel[data-inview="1"] .scopeScreen {
   clip-path: inset(0 0 0 0);
@@ -490,23 +522,22 @@ html[data-ready][data-motion="full"] .scopePanel:not([data-inview]) .chips {
 .scopePanel[data-inview="1"] .chips {
   transition: opacity var(--f6) linear calc(var(--f36));
 }
-@keyframes scope-power {
-  0% {
+@keyframes scope-power-draw {
+  from {
     opacity: 1;
     transform: scaleX(0);
-    animation-timing-function: var(--ease-cut);
   }
-  50% {
+  to {
     opacity: 1;
     transform: scaleX(1);
   }
-  75% {
+}
+@keyframes scope-power-fade {
+  from {
     opacity: 1;
-    transform: scaleX(1);
   }
-  100% {
+  to {
     opacity: 0;
-    transform: scaleX(1);
   }
 }
 
@@ -609,9 +640,12 @@ html[data-ready][data-motion="full"] .lt:not([data-inview]) .ltDesc {
 .lt[data-inview="1"] .ltIcon > * {
   transition: stroke-dashoffset var(--f18) var(--ease-title) var(--t0);
 }
-/* bar: wipe in f9 cut · hold · retract to a 24px stub f6 cut at f21 (= f6 after the text lands) */
+/* bar: wipe in f9 cut · hold · retract to a 24px stub f6 cut at f21 (= f6 after the text lands).
+   Two animations so the `cut` token reaches both moves (var() is ignored inside @keyframes). */
 .lt[data-inview="1"] .ltBarClip {
-  animation: lt-bar calc(var(--f9) + var(--f12) + var(--f6)) linear var(--t0) both;
+  animation:
+    lt-bar-in var(--f9) var(--ease-cut) var(--t0) both,
+    lt-bar-out var(--f6) var(--ease-cut) calc(var(--t0) + var(--f9) + var(--f12)) forwards;
 }
 .lt[data-inview="1"] .ltTagUnder {
   transition: opacity 0ms linear calc(var(--t0) + var(--f9) + var(--f12));
@@ -625,19 +659,19 @@ html[data-ready][data-motion="full"] .lt:not([data-inview]) .ltDesc {
 .lt[data-inview="1"] .ltDesc {
   transition: opacity var(--f9) linear calc(var(--t0) + var(--f6));
 }
-@keyframes lt-bar {
-  0% {
+@keyframes lt-bar-in {
+  from {
     clip-path: inset(0 100% 0 0);
-    animation-timing-function: var(--ease-cut);
   }
-  33.333% {
+  to {
     clip-path: inset(0 0 0 0);
   }
-  77.778% {
+}
+@keyframes lt-bar-out {
+  from {
     clip-path: inset(0 0 0 0);
-    animation-timing-function: var(--ease-cut);
   }
-  100% {
+  to {
     clip-path: inset(0 calc(100% - 24px) 0 0);
   }
 }
@@ -667,6 +701,27 @@ html[data-ready][data-motion="full"] .lt:not([data-inview]) .ltDesc {
   background: repeating-linear-gradient(45deg, var(--paper) 0 10px, var(--ink-950) 10px 20px);
   opacity: 0.85;
   transform-origin: 0 100%;
+  /* the waiting angle and the wind-up (the anticipation) */
+  --open: -10deg;
+  --wind: -14deg;
+}
+/* Single column: the card above sits only the grid gap away, so the stick may only rise into that
+   gap, never across the previous card. Angles are solved from the card width so the free end lifts
+   a fixed 26px (34px on the wind-up) at any width; the clap keeps its full travel and spring. */
+@media (max-width: 767px) {
+  .stick {
+    --open: -2deg;
+    --wind: -3deg;
+  }
+  @supports (transform: rotate(atan2(1px, 1px))) {
+    .clapper {
+      container-type: inline-size;
+    }
+    .stick {
+      --open: atan2(-26px, 100cqw);
+      --wind: atan2(-34px, 100cqw);
+    }
+  }
 }
 .flash {
   position: absolute;
@@ -678,7 +733,7 @@ html[data-ready][data-motion="full"] .lt:not([data-inview]) .ltDesc {
   pointer-events: none;
 }
 html[data-ready][data-motion="full"] .slated:not([data-inview]) .stick {
-  transform: rotate(-10deg);
+  transform: rotate(var(--open));
 }
 html[data-ready][data-motion="full"] .slated:not([data-inview]) :global(.wi) {
   transform: translateY(110%);
@@ -689,8 +744,13 @@ html[data-ready][data-motion="full"] .slated:not([data-inview]) .slatedBody {
 html[data-ready][data-motion="full"] .slated[data-inview] :global(.wi) {
   transform: none;
 }
+/* Two segments, so each carries its token easing through the shorthand (var() does not resolve in a
+   keyframe's animation-timing-function; it silently falls back to `ease`). The clap fills forwards
+   only, so it cannot override the wind-up while it waits. */
 .slated[data-inview="1"] .stick {
-  animation: slate-clap calc(var(--f2) + var(--f9)) linear var(--t0) both;
+  animation:
+    slate-windup var(--f2) var(--ease-title) var(--t0) both,
+    slate-clap var(--f9) var(--spring-clap) calc(var(--t0) + var(--f2)) forwards;
 }
 .slated[data-inview="1"] .flash {
   /* impact: the spring first reaches 0° about f3 into the clap */
@@ -702,16 +762,19 @@ html[data-ready][data-motion="full"] .slated[data-inview="1"] :global(.wi) {
 .slated[data-inview="1"] .slatedBody {
   transition: opacity var(--f12) linear calc(var(--t0) + var(--f12));
 }
+@keyframes slate-windup {
+  from {
+    transform: rotate(var(--open));
+  }
+  to {
+    transform: rotate(var(--wind));
+  }
+}
 @keyframes slate-clap {
-  0% {
-    transform: rotate(-10deg);
-    animation-timing-function: var(--ease-title);
+  from {
+    transform: rotate(var(--wind));
   }
-  18.182% {
-    transform: rotate(-14deg);
-    animation-timing-function: var(--spring-clap);
-  }
-  100% {
+  to {
     transform: rotate(0deg);
   }
 }

@@ -373,10 +373,11 @@
   z-index: 10;
 }
 
-/* release seam: the monitor's K0 row grows into a full-bleed hairline */
+/* release seam: the monitor's K0 row grows out to the right bleed and back to the copy's gutter
+   (the last chapter's copy stays on screen, so the rule stops short of it) */
 .seam {
   position: absolute;
-  left: 0;
+  left: var(--seam-l, 0px);
   right: 0;
   top: var(--mon-y, 50%);
   height: 1px;
@@ -384,7 +385,7 @@
   z-index: 9;
   opacity: 0;
   transform: scaleX(0);
-  transform-origin: var(--mon-cx, 50%) 50%;
+  transform-origin: calc(var(--mon-cx, 50%) - var(--seam-l, 0px)) 50%;
 }
 
 /* ---------------------------------------------------------------- transitions */

@@ -67,6 +67,25 @@ const MENU_CSS = `
 .mm-here{display:inline-flex;align-items:center;gap:.5rem;font-family:var(--font-geist-mono),ui-monospace,monospace;font-size:.625rem;letter-spacing:.14em;font-weight:500;text-transform:uppercase;color:var(--paper-mute);white-space:nowrap;font-feature-settings:"tnum" 1,"zero" 1}
 .mm-here>i{width:5px;height:5px;border-radius:999px;background:var(--signal);box-shadow:0 0 8px rgba(34,211,238,.7)}
 
+/* landscape phones (short + wide): links left, actions right, so the booking CTA is on screen the
+   moment the curtain lands instead of below the fold of a 360–390px tall panel */
+@media (max-height:480px) and (orientation:landscape){
+  .mm-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,18rem);grid-template-rows:auto 1fr;column-gap:2rem;align-content:start;padding-top:.75rem}
+  .mm-slate{grid-column:1/-1}
+  .mm-list{margin-top:.75rem}
+  .mm-link{padding:.5rem 0 .45rem}
+  .mm-label{font-size:1.75rem}
+  .mm-num{padding-top:.4rem}
+  .mm-actions{margin-top:.75rem;padding-top:0;align-self:start}
+}
+
+/* no JS: the Radix trigger is .js-only; a fragment link opens a plain CSS (:target) copy of the panel.
+   Its section links retarget the fragment (closing it); "close" targets an id that doesn't exist,
+   which clears :target without scrolling. */
+.mm-nojs-open,.mm-nojs{display:none}
+html:not(.js) .mm-nojs-open{display:inline-grid}
+html:not(.js) .mm-nojs:target{display:flex;pointer-events:auto}
+
 @keyframes mm-curtain-in{from{clip-path:inset(0 0 100% 0)}to{clip-path:inset(0 0 0 0)}}
 @keyframes mm-curtain-out{from{clip-path:inset(0 0 0 0)}to{clip-path:inset(0 0 100% 0)}}
 @keyframes mm-edge-in{from{transform:translateY(-100%)}to{transform:translateY(0)}}
@@ -159,7 +178,7 @@ export function MobileMenu({ active, className }: MobileMenuProps) {
       </style>
       <Dialog.Root open={open} onOpenChange={onOpenChange}>
         <Dialog.Trigger asChild>
-          <button type="button" className={cn("mm-burger", className)} aria-label="Open menu">
+          <button type="button" className={cn("mm-burger js-only", className)} aria-label="Open menu">
             <span className="mm-bars" aria-hidden="true">
               <i />
               <i />
@@ -286,6 +305,80 @@ export function MobileMenu({ active, className }: MobileMenuProps) {
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
+      <NoJsMenu className={className} />
+    </>
+  )
+}
+
+const NOJS_ID = "menu"
+/** A fragment no element carries: targeting it closes the :target panel without scrolling. */
+const NOJS_CLOSE = "menu-closed"
+
+/**
+ * No-JS fallback: the same curtain panel (same classes, no motion), opened by a fragment link and
+ * shown with :target. Hidden (display:none) whenever html.js is set, so it never duplicates the
+ * Radix dialog for scripted visitors.
+ */
+function NoJsMenu({ className }: { className?: string }) {
+  return (
+    <>
+      <a href={`#${NOJS_ID}`} className={cn("mm-burger mm-nojs-open", className)} aria-label="Open menu">
+        <span className="mm-bars" aria-hidden="true">
+          <i />
+          <i />
+        </span>
+      </a>
+      <div id={NOJS_ID} className="mm-panel mm-nojs">
+        <div className="mm-top shell">
+          <a
+            href="#home"
+            className="lm-host flex min-h-11 items-center gap-2.5 rounded-md text-[1.0625rem] font-semibold tracking-[-0.02em] text-paper"
+          >
+            <LogoMark />
+            <span>
+              Re<span className="text-signal">Dev</span>Ops
+            </span>
+          </a>
+          <a href={`#${NOJS_CLOSE}`} className="mm-burger" aria-label="Close menu">
+            <span className="mm-x" aria-hidden="true">
+              <i />
+              <i />
+            </span>
+          </a>
+        </div>
+        <div className="mm-body shell">
+          <div className="mm-slate slate" aria-hidden="true">
+            <span className="slate-label">Menu</span>
+            <Hairline draw="none" className="slate-rule" />
+          </div>
+          <nav aria-label="Sections">
+            <ol className="mm-list">
+              {NAV.map((l) => (
+                <li key={l.href} className="mm-item">
+                  <a href={l.href} className="mm-link">
+                    <span className="mm-num" aria-hidden="true">
+                      <span className="mm-head" />
+                      {l.reel}
+                    </span>
+                    <span className="mm-mask">
+                      <span className="mm-label">{l.label}</span>
+                    </span>
+                  </a>
+                  <span className="mm-rule" aria-hidden="true" />
+                </li>
+              ))}
+            </ol>
+          </nav>
+          <div className="mm-actions">
+            <CtaLink href={CALENDLY_URL} variant="primary" size="lg" external icon="arrow">
+              {PRIMARY_CTA_LABEL}
+            </CtaLink>
+            <CtaLink href={CONTACT_MAILTO} variant="secondary" size="lg" icon="mail">
+              Email Recep
+            </CtaLink>
+          </div>
+        </div>
+      </div>
     </>
   )
 }

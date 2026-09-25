@@ -55,7 +55,9 @@ export function MidCtaSection() {
               id="mid-cta-heading"
               className="mt-6 max-w-[18ch] text-balance text-[clamp(2rem,1.3rem+2.4vw,3.25rem)] font-[640] leading-[1.02] tracking-[-0.035em] text-paper"
             >
-              <SplitText text="See if ReDevOps is the right fit — in one call" delay={fms(3)} />
+              {/* non-breaking spaces keep "right fit —" together (SplitText splits on ASCII spaces only):
+                  on phones the heading breaks on the phrase, and no line starts with the dash */}
+              <SplitText text={"See if ReDevOps is the right\u00A0fit\u00A0— in one call"} delay={fms(3)} />
             </h2>
             <ShotList items={CALL_EXPECTATIONS} className="mt-8 max-w-[52ch]" />
           </div>

@@ -5,7 +5,7 @@ import { m, useMotionValueEvent, useScroll, useSpring, useTransform } from "fram
 import { cn } from "@/lib/utils"
 import { NAV, type SectionId } from "@/lib/sections"
 import { CALENDLY_URL, CONTACT_MAILTO, PRIMARY_CTA_LABEL_SHORT } from "@/lib/contact"
-import { SPRING } from "@/lib/motion/tokens"
+import { COLD_OPEN, DUR_MS, SPRING } from "@/lib/motion/tokens"
 import { CtaLink } from "@/components/motion/cta-link"
 import { useChrome } from "@/components/motion/motion-provider"
 import { useActiveSection } from "@/hooks/use-active-section"
@@ -22,13 +22,29 @@ import { MobileMenu } from "./mobile-menu"
  * properties only: the backdrop layer clips its bottom 8px (clip-path also clips hit-testing), the
  * content row rides up 4px and the film strip slides up into the new bottom edge.
  *
- * Entrance (intro-timed from --hero-t0, CSS only): logo mark + wordmark mask-rise at 0, nav items
- * rise at 120ms + i·f2, Email at 320ms, the primary CTA last at 320ms + f2.
+ * Entrance (intro-timed from --hero-t0, CSS only; re-based on the header in play mode, see
+ * HDR_T0_PLAY): logo mark + wordmark mask-rise at 0, nav items rise at 120ms + i·f2, Email at
+ * 320ms, the primary CTA last at 320ms + f2.
  */
+const SCROLLED_AT = 24
+
+/* Play mode: the cold open's top bar covers the header row until its exit (COLD_OPEN.exit, f4
+ * expo-in), so an entrance timed from the hero's t0 (700ms) would finish unseen and the header would
+ * simply be uncovered. The header gets its own origin: f3 into the exit, as the bar's leading edge
+ * clears the 64px row (≈1385–1435ms from 1280×720 to 390×844), so the logo rises in behind the
+ * departing bar and the nav / CTAs stagger in view. Seen / skip visits keep the shared --hero-t0. */
+const HDR_T0_PLAY = COLD_OPEN.exit[0] + DUR_MS.f3
+
+/* No JS: nothing sets [data-scrolled], so the backplate is on by default (content must never print
+ * through the nav). Where CSS scroll timelines exist it still fades in over the same first 24px of
+ * scroll, so the top-of-page state matches the JS header. */
 const HEADER_CSS = `
 .hdr-bg{position:absolute;inset:0;opacity:0;pointer-events:none;background:rgba(5,6,10,.8);clip-path:inset(0 0 0 0);transition:opacity var(--f6) var(--ease-ui),clip-path var(--f6) var(--ease-ui)}
 .hdr[data-scrolled] .hdr-bg{opacity:1;pointer-events:auto;clip-path:inset(0 0 8px 0);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
 .hdr[data-letterbox] .hdr-bg{-webkit-backdrop-filter:none;backdrop-filter:none}
+html:not(.js) .hdr-bg{opacity:1;pointer-events:auto;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+@supports (animation-timeline:scroll()){html:not(.js) .hdr-bg{animation:hdr-nojs-bg linear both;animation-timeline:scroll(root block);animation-range:0 ${SCROLLED_AT}px}}
+@keyframes hdr-nojs-bg{from{opacity:0}to{opacity:1}}
 .hdr-solid{position:absolute;inset:0 0 8px 0;background:var(--ink-950);opacity:0;pointer-events:none;transition:opacity var(--f6) var(--ease-ui)}
 .hdr[data-letterbox] .hdr-solid{opacity:1}
 
@@ -46,6 +62,10 @@ const HEADER_CSS = `
 .hdr-row>*{pointer-events:auto}
 .hdr[data-scrolled] .hdr-row{transform:translateY(-4px)}
 
+/* header CTAs keep one line at every width (the <640px CTA wrap is for long labels in page copy) */
+.hdr .cta{white-space:nowrap;padding-block:0}
+.hdr .cta-text{overflow-wrap:normal}
+html[data-intro="play"]:not([data-intro-done]) .hdr{--hero-t0:${HDR_T0_PLAY}ms}
 .hdr-mask{display:inline-block;overflow:clip;padding:0 .04em .14em;margin:0 -.04em -.14em;vertical-align:top}
 .hdr-mask-i{display:inline-block}
 html[data-motion="full"] .hdr-mask-i{animation:rdo-mask var(--f12) var(--ease-title) var(--hero-t0,0ms) both}
@@ -72,13 +92,12 @@ html[data-motion="full"] .hdr-ph-head[data-enter]>i{animation:hdr-ph-pop var(--f
 
 @media (forced-colors:active){
   .hdr-strip,.hdr-ph-head{display:none}
-  .hdr[data-scrolled] .hdr-bg{background:Canvas;border-bottom:1px solid CanvasText}
+  .hdr[data-scrolled] .hdr-bg,html:not(.js) .hdr-bg{background:Canvas;border-bottom:1px solid CanvasText}
   .hdr-ph-line{forced-color-adjust:none;background:Highlight;box-shadow:none}
 }
 `
 
 const NAV_IDS = new Set<SectionId>(NAV.map((n) => n.id))
-const SCROLLED_AT = 24
 
 /** Where the nav playhead is parked. `epoch` bumps when it returns from a non-nav section, which
  *  re-keys it (it draws in place instead of sliding from a stale position). */

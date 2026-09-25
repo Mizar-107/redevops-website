@@ -31,7 +31,7 @@ export function NoticeCard({ className }: { className?: string }) {
 
       <div className="px-2 py-14 text-center">
         <p className={cn(s.noticeLabel, "font-mono text-slate uppercase text-paper-mute")}>
-          <span className="sr-only">{LABEL}</span>
+          <span className="sr-only select-none">{LABEL}</span>
           <span aria-hidden="true" className={s.track}>
             {chars.map((c, i) => (
               <span key={i} className={s.ch} style={{ "--o": (i - center).toFixed(1) } as CSSProperties}>

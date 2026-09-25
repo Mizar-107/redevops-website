@@ -16,7 +16,9 @@ import { RecapSting } from "./recap-sting"
 import { CopyEmail } from "./copy-email"
 import s from "./final.module.css"
 
-const TITLE = "Ready for calmer infrastructure and clearer spend?"
+/** a non-breaking space keeps "clearer spend?" together (the split below is on ASCII spaces only): the
+ * closing question never ends on a lone word at phone width */
+const TITLE = "Ready for calmer infrastructure and clearer\u00A0spend?"
 const WORDS = TITLE.split(" ")
 const WORD_STEP = staggerFor(WORDS.length, 83, 500)
 
@@ -55,11 +57,23 @@ export function CtaSection() {
         <div ref={contentRef} className="relative mx-auto flex max-w-4xl flex-col items-center text-center">
           <Slate section="final" align="center" className={cn("w-full max-w-xl", s.slateFit)} />
 
-          <RecapSting sentinelRef={sentinelRef} targetRef={ctaRowRef} onLand={land} className="mt-9" />
+          {/* short viewports (sm+, ≤ 800px tall): tighter rhythm and a 2-line lede pull the booking row
+              ~75px closer to the sting, so at 1280×720 / 1366×768 the monitor's line is still below the
+              fixed header when the button is fully in view and the throughline flight can play
+              (shorter still, the sting cuts instead: see RecapSting) */}
+          <RecapSting
+            sentinelRef={sentinelRef}
+            targetRef={ctaRowRef}
+            onLand={land}
+            className="mt-9 [@media(min-width:640px)_and_(max-height:800px)]:mt-6"
+          />
 
-          <h2 id="final-title" className="mt-9 max-w-[15ch] text-h2 text-balance sm:max-w-[18ch] lg:max-w-none">
+          <h2
+            id="final-title"
+            className="mt-9 max-w-[15ch] text-h2 text-balance max-[359px]:text-[clamp(1.75rem,10vw,2.25rem)] sm:max-w-[18ch] lg:max-w-none [@media(min-width:640px)_and_(max-height:800px)]:mt-6"
+          >
             <span className="split" data-reveal="mask">
-              <span className="sr-only">{TITLE}</span>
+              <span className="sr-only select-none">{TITLE}</span>
               <span aria-hidden="true">
                 {WORDS.map((w, i) => (
                   <Fragment key={i}>
@@ -76,18 +90,26 @@ export function CtaSection() {
             </span>
           </h2>
 
-          <Reveal as="p" delay={120} className="mt-6 max-w-2xl text-lede text-paper-dim text-pretty">
+          <Reveal
+            as="p"
+            delay={120}
+            className="mt-6 max-w-2xl text-lede text-paper-dim text-pretty [@media(min-width:640px)_and_(max-height:800px)]:mt-4 [@media(min-width:640px)_and_(max-height:800px)]:max-w-3xl"
+          >
             Tell us where it hurts — cost, reliability, or delivery. Your first consultation is free, and you will leave
             with a concrete next step either way.
           </Reveal>
 
-          <ShotList items={CALL_EXPECTATIONS} size="lg" className="mt-9 w-full max-w-xl text-left" />
+          <ShotList
+            items={CALL_EXPECTATIONS}
+            size="lg"
+            className="mt-9 w-full max-w-xl text-left [@media(min-width:640px)_and_(max-height:800px)]:mt-6"
+          />
 
           <div
             ref={ctaRowRef}
             data-reveal="rise"
             style={{ "--d": "83ms" } as CSSProperties}
-            className="mt-11 flex w-full max-w-md flex-col items-stretch gap-6 sm:w-auto sm:max-w-none sm:flex-row sm:items-center sm:gap-3"
+            className="mt-11 flex w-full max-w-md flex-col items-stretch gap-6 sm:w-auto sm:max-w-none sm:flex-row sm:items-center sm:gap-3 [@media(min-width:640px)_and_(max-height:800px)]:mt-8"
           >
             <CtaLink
               href={CALENDLY_URL}

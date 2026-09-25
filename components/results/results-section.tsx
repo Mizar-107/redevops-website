@@ -86,8 +86,8 @@ export function ResultsSection() {
           ))}
         </div>
 
-        {/* 4 · example focus as slated scenes */}
-        <div className="mx-auto mt-24 grid max-w-4xl gap-6 md:mt-28 md:grid-cols-2">
+        {/* 4 · example focus as slated scenes (stacked: a wider gap is the room the next clapper opens into) */}
+        <div className="mx-auto mt-24 grid max-w-4xl gap-10 md:mt-28 md:grid-cols-2 md:gap-6">
           {exampleFocus.map((ex) => (
             <SlatedCard key={ex.title} scene={ex.scene} title={ex.title} body={ex.body} />
           ))}

@@ -114,7 +114,7 @@ export function StackedEdit() {
   }, [progress, reduced])
 
   return (
-    <div className="shell pb-24 md:pb-32 lg:fx:hidden">
+    <div className={cn("shell pb-24 md:pb-32", styles.stackWrap)}>
       <div ref={listRef} className={styles.stack}>
         <span ref={railRef} className={styles.rail} aria-hidden="true">
           <span ref={fillRef} className={styles.railFill} />

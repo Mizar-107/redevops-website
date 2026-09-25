@@ -27,7 +27,7 @@ function EditTitle({ className }: { className?: string }) {
   const [a, b] = MARKED
   return (
     <h2 id="process-title" className={cn("split", styles.title, className)} data-reveal="mask">
-      <span className="sr-only">{TITLE}</span>
+      <span className="sr-only select-none">{TITLE}</span>
       <span aria-hidden="true">
         {words.slice(0, a).map((_, i) => (
           <Fragment key={i}>

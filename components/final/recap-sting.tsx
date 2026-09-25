@@ -182,6 +182,8 @@ const idx = (k: number) => String(k + 1).padStart(2, "0")
 const CUT_TO = `CUT TO · ${section("final").cut.toUpperCase()}`
 /** fraction of the f18 flight after which the underline takes over from the flyer */
 const LAND_AT = 0.8
+/** px the monitor's line must sit below the fixed header (--header-h) for the flight to launch */
+const CLEAR_OF_HEADER = 8
 
 export type RecapStingProps = {
   /** a data-reveal="custom" element; its reveal (the section is about half in view) rolls the sting */
@@ -201,8 +203,10 @@ export type RecapStingProps = {
  * (f9 each, one f1 8% white flash per cut, confined to the monitor), collapses the last one to a
  * single line (art scaleY → 0, line scaleX 1 → .6, f9 cut), and then hands that line — a detached
  * .hairline FLIPped from the monitor to the booking button's underline slot (translate + scaleX, f18
- * title) — to the CTA, which lights. The flight waits until the button is fully on screen, so the
- * payoff is never played to an empty viewport. The cuts are CSS animations started in one style
+ * title) — to the CTA, which lights. The flight waits until the button is fully on screen (and its
+ * row revealed), so the payoff is never played to an empty viewport; if by then the monitor's line
+ * has scrolled under the fixed header, it cuts instead (the button draws its own underline) rather
+ * than flying out of the header chrome. The cuts are CSS animations started in one style
  * pass; JS only flips data-state and runs the one WAAPI flight. No rAF loop.
  * still (no JS / reduced / MOTION off): the final frame (the merged braid), button lit.
  */
@@ -226,6 +230,7 @@ export function RecapSting({ sentinelRef, targetRef, onLand, className }: RecapS
 
     let disposed = false
     let io: IntersectionObserver | undefined
+    let removeRowListener: (() => void) | undefined
     let timer: ReturnType<typeof setTimeout> | undefined
     let flight: Animation | undefined
     let core: Animation | undefined
@@ -304,16 +309,51 @@ export function RecapSting({ sentinelRef, targetRef, onLand, className }: RecapS
       timer = setTimeout(() => land(u), Math.round(DUR_MS.f18 * LAND_AT))
     }
 
-    /** hold the single line in the monitor until the button (and its underline) is fully on screen */
+    /**
+     * The button is on screen: fly only if the monitor's line is visible too, clear of the fixed
+     * header. On short viewports (desktop under ~680px tall, most phones) the line has already scrolled
+     * up under the header by the time the button is fully in view, and a flight would appear out of
+     * the header chrome. Cut instead: the line leaves the monitor (ghost trace + CUT TO) and the button
+     * draws its own underline (the `lit` transition, f18 title).
+     */
+    const launch = (row: HTMLElement) => {
+      const headerH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--header-h")) || 64
+      if (line.getBoundingClientRect().top >= headerH + CLEAR_OF_HEADER) return fly()
+      root.setAttribute("data-state", "done")
+      // the row may have only just revealed: light a visible button, not one still fading in
+      const lightUp = () => {
+        if (!disposed) landRef.current(false)
+      }
+      const fades = row.getAnimations().filter((a) => (a as CSSTransition).transitionProperty === "opacity")
+      if (!fades.length) return lightUp()
+      Promise.all(fades.map((a) => a.finished)).then(lightUp, lightUp)
+    }
+
+    /**
+     * Hold the single line in the monitor until the button (and its underline) is fully on screen
+     * and its row has revealed (at phone width the row rises after the button is already in view:
+     * never land on a button that is still at opacity 0).
+     */
     const awaitTarget = () => {
+      const row = targetRef.current
       const anchor = underline()?.closest("a")
-      if (!anchor) return finish()
+      if (!anchor || !row) return finish()
+      let onScreen = false
+      let launched = false
+      const tryLaunch = () => {
+        if (launched || disposed || !onScreen || !row.hasAttribute("data-inview")) return
+        launched = true
+        io?.disconnect()
+        row.removeEventListener("rdo:reveal", tryLaunch)
+        launch(row)
+      }
+      removeRowListener = () => row.removeEventListener("rdo:reveal", tryLaunch)
+      row.addEventListener("rdo:reveal", tryLaunch)
       io = new IntersectionObserver(
         (entries) => {
           const e = entries[entries.length - 1]
-          if (!e.isIntersecting || e.intersectionRatio < 0.98) return
-          io?.disconnect()
-          fly()
+          onScreen = e.isIntersecting && e.intersectionRatio >= 0.98
+          tryLaunch()
         },
         { threshold: [0, 0.5, 0.98, 1], rootMargin: "0px 0px -20px 0px" },
       )
@@ -354,6 +394,7 @@ export function RecapSting({ sentinelRef, targetRef, onLand, className }: RecapS
       line.removeEventListener("animationend", onLineEnd)
       clearTimeout(timer)
       io?.disconnect()
+      removeRowListener?.()
       flight?.cancel()
       core?.cancel()
       flyer.style.opacity = "0"

@@ -26,8 +26,11 @@ export function Footer() {
       {/* post-credits: static, after the roll */}
       <div className="shell flex flex-col items-center gap-4 pb-20 pt-16 text-center md:pb-24">
         <Slate section="credits" label="POST-CREDITS" cut={null} align="center" className={cn("w-full max-w-md", s.slateFit)} />
-        <CtaLink href={CALENDLY_URL} variant="ghost" size="lg" external icon="arrow">
-          Still here? {PRIMARY_CTA_LABEL}
+        {/* the label fits one line from ~352px. Below that it breaks on the phrase, "Still here? /
+            Book a free consultation →": the block span ends line 1 (so the label box shrinks to the
+            longer line and the arrow stays beside it) and non-breaking spaces keep each phrase whole */}
+        <CtaLink href={CALENDLY_URL} variant="ghost" size="lg" external icon="arrow" className="max-w-full">
+          <span className="max-[359px]:block">{"Still\u00A0here?"}</span> {PRIMARY_CTA_LABEL.replace(/ /g, "\u00A0")}
         </CtaLink>
       </div>
 
@@ -49,7 +52,9 @@ export function Footer() {
             </div>
 
             <nav aria-label="Footer">
-              <ul className="grid grid-cols-2 gap-x-8 sm:flex sm:flex-wrap sm:gap-x-7 lg:grid lg:grid-cols-1 lg:gap-0">
+              {/* 2 × 2 in the narrow md column (a wrapping row would leave "05 FAQ" alone), one row on
+                  single-column sm, a list at lg */}
+              <ul className="grid grid-cols-2 gap-x-8 sm:flex sm:flex-wrap sm:gap-x-7 md:grid md:grid-cols-2 md:gap-x-8 lg:grid-cols-1 lg:gap-0">
                 {NAV.map((l) => (
                   <li key={l.href}>
                     <a href={l.href} className={cn("text-sm", s.navLink)}>

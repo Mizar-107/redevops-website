@@ -38,7 +38,7 @@ export function LowerThird({ index, icon: Icon, title, description, className }:
 
         <div className={s.ltBar}>
           <span className={cn(s.ltTag, s.ltTagUnder, "font-mono text-hud uppercase")}>{tag}</span>
-          <span aria-hidden="true" className={s.ltBarClip}>
+          <span aria-hidden="true" className={cn(s.ltBarClip, "select-none")}>
             <span className={cn(s.ltTag, "font-mono text-hud uppercase")}>{tag}</span>
           </span>
         </div>

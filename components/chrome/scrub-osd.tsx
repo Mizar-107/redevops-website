@@ -13,7 +13,9 @@ import { ScrambleText } from "@/components/motion/scramble-text"
 /** How long the OSD lingers after the last scroll event before it fades out (spec: 900ms). */
 const IDLE_MS = 900
 const LG = "(min-width: 1024px)"
-const TC_ZERO = formatTC(0)
+/** Module-level (identity-stable) so React never re-applies the initial markup on a re-render:
+ *  a fresh `{ __html }` object each render would reset the imperatively written TC to zero. */
+const TC_HTML = { __html: formatTC(0) }
 
 /**
  * Scrub OSD (lg+ only): a broadcast on-screen display that surfaces only while the page is being
@@ -23,7 +25,9 @@ const TC_ZERO = formatTC(0)
  * - The reel label comes from useActiveSection() and scrambles on change: the only React renders,
  *   and they happen on section boundaries only.
  * - TC = formatTC(scrollFrames(scrollY)), written straight to textContent from one passive,
- *   rAF-coalesced scroll listener. No React state per frame.
+ *   rAF-coalesced scroll listener. No React state per frame. scrollY is read in the scroll event
+ *   (style is already clean there), never inside the rAF, where it would force a second style +
+ *   layout pass after framer has written that frame's transforms.
  * - data-active on scroll → fade in f6; 900ms without scroll → fade out f18 (exit).
  * - aria-hidden, pointer-events none, hidden entirely under still (no JS / reduced / MOTION off)
  *   and under forced colours.
@@ -56,9 +60,10 @@ export function ScrubOsd() {
     let idle: ReturnType<typeof setTimeout> | undefined
     let lastTc = ""
     let attached = false
+    let y = 0
 
     const writeTc = () => {
-      const s = formatTC(scrollFrames(window.scrollY))
+      const s = formatTC(scrollFrames(y))
       if (s !== lastTc) {
         lastTc = s
         tc.textContent = s
@@ -73,11 +78,13 @@ export function ScrubOsd() {
       idle = setTimeout(hide, IDLE_MS)
     }
     const onScroll = () => {
+      y = window.scrollY
       if (!raf) raf = requestAnimationFrame(tick)
     }
     const sync = () => {
       if (mq.matches && !attached) {
         attached = true
+        y = window.scrollY
         writeTc()
         window.addEventListener("scroll", onScroll, { passive: true })
       } else if (!mq.matches && attached) {
@@ -124,7 +131,7 @@ export function ScrubOsd() {
       <span>
         TC{" "}
         {/* written imperatively; React owns only the constant initial markup */}
-        <span ref={tcRef} className="text-paper-dim" dangerouslySetInnerHTML={{ __html: TC_ZERO }} />
+        <span ref={tcRef} className="text-paper-dim" dangerouslySetInnerHTML={TC_HTML} />
       </span>
       <span
         className={cn(

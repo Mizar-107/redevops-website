@@ -638,6 +638,11 @@ html[data-motion="full"] .cta:active {
   }
 }
 
+/* the finale's horizon poster draws its streak row only once the field has measured it */
+[data-signal-field="horizon"]:not([data-hy]) [data-poster-row] {
+  display: none;
+}
+
 /* controls that do nothing without JS are not rendered for no-JS visitors */
 html:not(.js) .js-only {
   display: none !important;

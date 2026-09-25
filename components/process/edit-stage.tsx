@@ -9,7 +9,7 @@ import { useScrub } from "@/hooks/use-scrub"
 import { useStickyGuard } from "@/hooks/use-sticky-guard"
 import { useReducedMotionSafe } from "@/hooks/use-motion-pref"
 import { ScrambleText } from "@/components/motion/scramble-text"
-import { END_OFF, END_ON, JUMP, SEQ_FRAMES, STEPS, clipLabel, stepAt, tcAt, type StepIndex } from "./process-data"
+import { END_OFF, END_ON, JUMP, PIN_MQ, SEQ_FRAMES, STEPS, clipLabel, stepAt, tcAt, type StepIndex } from "./process-data"
 import { ProgramMonitor } from "./program-monitor"
 import { Timeline, levelAt, type TimelineHandle } from "./timeline"
 import styles from "./process.module.css"
@@ -74,9 +74,9 @@ export function EditStage() {
     }
   }, [])
 
-  // Only drive anything while the pinned layout is actually displayed (lg + motion full).
+  // Only drive anything while the pinned layout is actually displayed (PIN_MQ + motion full).
   useEffect(() => {
-    const mq = window.matchMedia("(min-width: 1024px)")
+    const mq = window.matchMedia(PIN_MQ)
     const sync = () => {
       const on = mq.matches && !reduced
       st.current.enabled = on
@@ -121,9 +121,9 @@ export function EditStage() {
   const meta = section("process")
 
   return (
-    <div ref={wrapRef} className="relative hidden lg:fx:block lg:fx:h-[240svh]">
+    <div ref={wrapRef} className={cn("relative hidden", styles.pinWrap)}>
       {/* what the stage shows, for screen readers, exactly once */}
-      <ol className="sr-only">
+      <ol className="sr-only select-none">
         {STEPS.map((s) => (
           <li key={s.index}>
             <h3>{s.title}</h3>
@@ -135,8 +135,9 @@ export function EditStage() {
       <div
         ref={stageRef}
         className={cn(
-          "top-0 flex h-[100svh] flex-col overflow-clip pt-[calc(var(--header-h)+16px)] lg:fx:sticky",
+          "top-0 flex h-[100svh] flex-col overflow-clip pt-[calc(var(--header-h)+16px)]",
           styles.stage,
+          styles.pinStage,
         )}
       >
         <div className={cn("shell", styles.viewer)}>

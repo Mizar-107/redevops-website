@@ -16,7 +16,6 @@ import { cn } from "@/lib/utils"
 import { SPRING } from "@/lib/motion/tokens"
 import { clamp, lerp } from "@/lib/motion/math"
 import { useScrub } from "@/hooks/use-scrub"
-import { useRafWhenVisible } from "@/hooks/use-raf-when-visible"
 import { useReducedMotionSafe } from "@/hooks/use-motion-pref"
 import { ViewfinderFrame } from "@/components/motion/viewfinder-frame"
 import { Hairline } from "@/components/motion/hairline"
@@ -26,8 +25,14 @@ import s from "./results.module.css"
 /** Scroll maps onto this slice of the width, so both states are always partly on screen. */
 const SWEEP_MIN = 0.06
 const SWEEP_MAX = 0.94
-/** px per second the feed drifts right → left (untuned signal flows into the scanline). */
+/** px per second the feed drifts right → left (untuned signal flows into the scanline). CSS runs it. */
 const DRIFT_PX_S = 40
+/**
+ * The scanline travels inside the glass, this far from each edge, so the handle, its focus ring and
+ * VF brackets (±17px) are never clipped at the ends of the range (value 0 / 100).
+ */
+const TRAVEL_PAD = 20
+const travelPad = (w: number) => Math.min(TRAVEL_PAD, w / 4)
 /** Chips fade out when they would collide with the panel edge. */
 const CHIP_ROOM_L = 104
 const CHIP_ROOM_R = 118
@@ -41,8 +46,9 @@ const ARIA_IMG =
  * Telemetry Scope: an illustrative before/after oscilloscope. Four lanes of seeded, periodic
  * signals; untuned right of the scanline, tuned left of it. The sweep follows scroll until the
  * viewer drags the panel or uses the (visually transparent) range input; the feed drifts through
- * the scanline at 40px/s under full motion. Every per-frame write is a transform through refs:
- * no React renders except on resize.
+ * the scanline at 40px/s under full motion as a compositor-only CSS animation (.scopeDrift).
+ * Sweep writes are transforms through refs, only when the sweep moves: no React renders except on
+ * resize, and nothing runs per frame while the page is idle.
  */
 export function TelemetryScope({ className }: { className?: string }) {
   const uid = useId().replace(/[^a-zA-Z0-9_-]/g, "")
@@ -54,7 +60,6 @@ export function TelemetryScope({ className }: { className?: string }) {
   const unInner = useRef<SVGSVGElement>(null)
   const tuOuter = useRef<HTMLDivElement>(null)
   const tuInner = useRef<SVGSVGElement>(null)
-  const coInner = useRef<SVGSVGElement>(null)
   const scanRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -65,7 +70,7 @@ export function TelemetryScope({ className }: { className?: string }) {
   )
 
   const reduced = useReducedMotionSafe()
-  const st = useRef({ sweep: 0.5, drift: 0, w: 0, override: false, reduced: false, queued: false, shown: -1, chips: "" })
+  const st = useRef({ sweep: 0.5, w: 0, override: false, reduced: false, queued: false, shown: -1, chips: "" })
   st.current.reduced = reduced
 
   // ---------------------------------------------------------------- imperative render
@@ -74,13 +79,12 @@ export function TelemetryScope({ className }: { className?: string }) {
     S.queued = false
     const w = S.w
     if (!w) return
-    const x = S.sweep * w
-    const o = S.drift
+    const pad = travelPad(w)
+    const x = pad + S.sweep * (w - 2 * pad)
     if (unOuter.current) unOuter.current.style.transform = `translate3d(${x}px,0,0)`
-    if (unInner.current) unInner.current.style.transform = `translate3d(${-x - o}px,0,0)`
+    if (unInner.current) unInner.current.style.transform = `translate3d(${-x}px,0,0)`
     if (tuOuter.current) tuOuter.current.style.transform = `translate3d(${x - w}px,0,0)`
-    if (tuInner.current) tuInner.current.style.transform = `translate3d(${w - x - o}px,0,0)`
-    if (coInner.current) coInner.current.style.transform = `translate3d(${-o}px,0,0)`
+    if (tuInner.current) tuInner.current.style.transform = `translate3d(${w - x}px,0,0)`
     const scan = scanRef.current
     if (scan) {
       scan.style.transform = `translate3d(${x}px,0,0)`
@@ -130,7 +134,6 @@ export function TelemetryScope({ className }: { className?: string }) {
       const h = Math.round(r.height)
       if (!w || !h) return
       st.current.w = w
-      st.current.drift %= w
       setSize((p) => (p && p.w === w && p.h === h ? p : { w, h }))
     })
     ro.observe(el)
@@ -163,7 +166,6 @@ export function TelemetryScope({ className }: { className?: string }) {
     const S = st.current
     if (S.override) return
     S.sweep = reduced ? 0.5 : lerp(SWEEP_MIN, SWEEP_MAX, clamp(progress.get()))
-    if (reduced) S.drift = 0
     schedule()
   }, [reduced, progress, schedule])
 
@@ -190,24 +192,13 @@ export function TelemetryScope({ className }: { className?: string }) {
     [user, userSmooth, setSweep],
   )
 
-  // ---------------------------------------------------------------- drift (the only time-based motion)
-  useRafWhenVisible(
-    panelRef,
-    (_t, dt) => {
-      const S = st.current
-      if (!S.w) return
-      S.drift = (S.drift + DRIFT_PX_S * dt) % S.w
-      apply()
-    },
-    { enabled: !reduced && size != null },
-  )
-
   // ---------------------------------------------------------------- pointer: drag anywhere on the panel
   const drag = useRef<{ id: number; x0: number; y0: number; active: boolean; touch: boolean } | null>(null)
   const xToSweep = (clientX: number) => {
     const r = screenRef.current?.getBoundingClientRect()
     if (!r || !r.width) return st.current.sweep
-    return (clientX - r.left) / r.width
+    const pad = travelPad(r.width)
+    return (clientX - r.left - pad) / (r.width - 2 * pad)
   }
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (e.pointerType === "mouse" && e.button !== 0) return
@@ -257,6 +248,8 @@ export function TelemetryScope({ className }: { className?: string }) {
       : { viewBox: `0 0 ${SCOPE_SSR.w} ${SCOPE_SSR.h}`, preserveAspectRatio: "xMidYMid slice", width: "100%", height: "100%" }
   // SSR/pre-measure: sweep .5 expressed in percentages (no measurement needed)
   const ssr = (t: string): CSSProperties | undefined => (px ? undefined : { transform: t })
+  // the drift carrier: an HTML box exactly as wide as the 2W feed (the SVG's transform is the sweep's)
+  const driftBox: CSSProperties | undefined = px ? { width: geo.w * 2, height: geo.h } : undefined
 
   return (
     <figure className={className}>
@@ -273,7 +266,14 @@ export function TelemetryScope({ className }: { className?: string }) {
         onPointerCancel={onPointerEnd}
       >
         <ViewfinderFrame always />
-        <div ref={screenRef} className={cn(s.scopeScreen, "absolute inset-0 overflow-clip rounded-[13px]")}>
+        <div
+          ref={screenRef}
+          // the drift is a CSS loop: MotionBoot pauses [data-loop] subtrees offscreen
+          data-loop=""
+          data-px={px ? "" : undefined}
+          style={px ? ({ "--drift-dur": `${(geo.w / DRIFT_PX_S).toFixed(3)}s` } as CSSProperties) : undefined}
+          className={cn(s.scopeScreen, "absolute inset-0 overflow-clip rounded-[13px]")}
+        >
           {/* static graticule */}
           <svg aria-hidden="true" className={s.scopeLayer} {...svgBox(1)}>
             <path d={geo.grid.verticals} className={s.gridV} />
@@ -285,43 +285,49 @@ export function TelemetryScope({ className }: { className?: string }) {
           <div role="img" aria-label={ARIA_IMG} className="absolute inset-0">
             {/* TUNED: window [0, sweep) */}
             <div ref={tuOuter} className={s.scopeWindow} style={ssr("translateX(-50%)")}>
-              <svg ref={tuInner} aria-hidden="true" className={s.scopeLayer} style={ssr("translateX(50%)")} {...svgBox(px ? 2 : 1)}>
-                <path d={geo.tuned.fill} className={s.tFill} />
-                <path d={geo.tuned.provisioned} className={s.tProv} />
-                <path d={geo.tuned.base} className={s.tBase} />
-                <path d={geo.tuned.alerts} className={s.tAlert} />
-                <path d={geo.tuned.alertHeads} className={s.tAlertHead} />
-                <path d={geo.tuned.goTicks} className={s.tGo} />
-                <path d={geo.tuned.link} className={s.tLink} />
-                <path d={geo.tuned.dots} className={s.tDots} />
-              </svg>
+              <div className={s.scopeDrift} style={driftBox}>
+                <svg ref={tuInner} aria-hidden="true" className={s.scopeLayer} style={ssr("translateX(50%)")} {...svgBox(px ? 2 : 1)}>
+                  <path d={geo.tuned.fill} className={s.tFill} />
+                  <path d={geo.tuned.provisioned} className={s.tProv} />
+                  <path d={geo.tuned.base} className={s.tBase} />
+                  <path d={geo.tuned.alerts} className={s.tAlert} />
+                  <path d={geo.tuned.alertHeads} className={s.tAlertHead} />
+                  <path d={geo.tuned.goTicks} className={s.tGo} />
+                  <path d={geo.tuned.link} className={s.tLink} />
+                  <path d={geo.tuned.dots} className={s.tDots} />
+                </svg>
+              </div>
             </div>
 
             {/* UNTUNED: window [sweep, 1] */}
             <div ref={unOuter} className={s.scopeWindow} style={ssr("translateX(50%)")}>
-              <svg ref={unInner} aria-hidden="true" className={s.scopeLayer} style={ssr("translateX(-50%)")} {...svgBox(px ? 2 : 1)}>
-                <defs>
-                  <pattern id={hatchId} width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-                    <line x1="0" y1="0" x2="0" y2="7" className={s.uHatchLine} />
-                  </pattern>
-                </defs>
-                <path d={geo.untuned.hatch} fill={`url(#${hatchId})`} className={s.uHatch} />
-                <path d={geo.untuned.provisioned} className={s.uProv} />
-                <path d={geo.untuned.noiseBase} className={s.uBase} />
-                <path d={geo.untuned.spikes} className={s.uSpike} />
-                <path d={geo.untuned.spikesAlarm} className={s.uSpikeAlarm} />
-                <path d={geo.untuned.bars} className={s.uBar} />
-                <path d={geo.untuned.barsAlarm} className={s.uBarAlarm} />
-                <path d={geo.untuned.barsX} className={s.uX} />
-                <path d={geo.untuned.dots} className={s.uDots} />
-              </svg>
+              <div className={s.scopeDrift} style={driftBox}>
+                <svg ref={unInner} aria-hidden="true" className={s.scopeLayer} style={ssr("translateX(-50%)")} {...svgBox(px ? 2 : 1)}>
+                  <defs>
+                    <pattern id={hatchId} width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                      <line x1="0" y1="0" x2="0" y2="7" className={s.uHatchLine} />
+                    </pattern>
+                  </defs>
+                  <path d={geo.untuned.hatch} fill={`url(#${hatchId})`} className={s.uHatch} />
+                  <path d={geo.untuned.provisioned} className={s.uProv} />
+                  <path d={geo.untuned.noiseBase} className={s.uBase} />
+                  <path d={geo.untuned.spikes} className={s.uSpike} />
+                  <path d={geo.untuned.spikesAlarm} className={s.uSpikeAlarm} />
+                  <path d={geo.untuned.bars} className={s.uBar} />
+                  <path d={geo.untuned.barsAlarm} className={s.uBarAlarm} />
+                  <path d={geo.untuned.barsX} className={s.uX} />
+                  <path d={geo.untuned.dots} className={s.uDots} />
+                </svg>
+              </div>
             </div>
 
             {/* shared: real usage runs straight through the scanline */}
             <div className={s.scopeWindowStatic}>
-              <svg ref={coInner} aria-hidden="true" className={s.scopeLayer} {...svgBox(px ? 2 : 1)}>
-                <path d={geo.common.usage} className={s.cUsage} />
-              </svg>
+              <div className={s.scopeDrift} style={driftBox}>
+                <svg aria-hidden="true" className={s.scopeLayer} {...svgBox(px ? 2 : 1)}>
+                  <path d={geo.common.usage} className={s.cUsage} />
+                </svg>
+              </div>
             </div>
           </div>
 
@@ -351,7 +357,8 @@ export function TelemetryScope({ className }: { className?: string }) {
             defaultValue={50}
             aria-label="Compare untuned and tuned illustrative signals"
             aria-valuetext={valueText(50)}
-            className={s.scopeRange}
+            // no JS = nothing to drive: keep a dead slider out of the page and the a11y tree
+            className={cn(s.scopeRange, "js-only")}
             onChange={(e) => engage(Number(e.currentTarget.value) / 100)}
           />
 
@@ -374,7 +381,7 @@ export function TelemetryScope({ className }: { className?: string }) {
         {/* power-on: the notice's rule, arriving on the dark glass */}
         <Hairline draw="none" className={s.powerLine} />
       </div>
-      <figcaption className="mt-3 text-right font-mono text-hud uppercase text-paper-mute">
+      <figcaption className="mt-3 text-right font-mono text-hud uppercase text-paper-dim">
         Illustrative signals — not client data.
       </figcaption>
     </figure>

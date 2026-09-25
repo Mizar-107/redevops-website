@@ -56,7 +56,7 @@ export function reelLine(
       smooth: a.smooth,
       color: tint(lerp(a.resolve(1), 1, t)),
       head: 1 - seg(p, 0.972, 0.99),
-      // the line hands over to the full-bleed seam (identical row) as the seam finishes drawing
+      // the line hands over to the seam (identical row) as the seam finishes drawing
       opacity: 1 - seg(p, 0.99, 1),
     }
   }
@@ -149,6 +149,7 @@ export function ReelStage({ scenes = SCENES }: { scenes?: readonly SceneModule[]
   const lbRef = useRef<LetterboxHandle>(null)
   const monitorRef = useRef<HTMLDivElement>(null)
   const seamRef = useRef<HTMLSpanElement>(null)
+  const articlesRef = useRef<HTMLDivElement>(null)
   const seamFrom = useRef(0.5)
 
   useStickyGuard(stageRef)
@@ -293,18 +294,25 @@ export function ReelStage({ scenes = SCENES }: { scenes?: readonly SceneModule[]
     }
   }, [progress, raw, letterbox, render, setScenes])
 
-  // The seam rules continue the monitor's K0 row to both viewport edges: cache its geometry.
+  // The seam continues the monitor's K0 row out to the right edge and back to the copy's gutter
+  // (the last chapter's copy stays on screen through the release, so the rule never strikes it).
   useEffect(() => {
     const stage = stageRef.current
     const mon = monitorRef.current
+    const arts = articlesRef.current
     if (!stage || !mon) return
     const measure = () => {
       const s = stage.getBoundingClientRect()
       const m = mon.getBoundingClientRect()
       if (!m.width) return
+      const a = arts?.getBoundingClientRect()
+      // half the grid gap (gap-8) past the copy column
+      const left = a && a.width ? Math.max(0, Math.min(m.left - s.left, a.right - s.left + 16)) : 0
+      stage.style.setProperty("--seam-l", `${left.toFixed(1)}px`)
       stage.style.setProperty("--mon-cx", `${(m.left - s.left + m.width / 2).toFixed(1)}px`)
       stage.style.setProperty("--mon-y", `${(m.top - s.top + m.height / 2).toFixed(1)}px`)
-      seamFrom.current = s.width ? m.width / s.width : 0.5
+      const span = s.width - left
+      seamFrom.current = span > 0 ? Math.min(1, m.width / span) : 0.5
       st.current.rule = "" // re-apply with the new start width
       if (st.current.enabled) render(st.current.lastP)
     }
@@ -312,6 +320,7 @@ export function ReelStage({ scenes = SCENES }: { scenes?: readonly SceneModule[]
     const ro = new ResizeObserver(measure)
     ro.observe(stage)
     ro.observe(mon)
+    if (arts) ro.observe(arts)
     return () => ro.disconnect()
   }, [render])
 
@@ -357,7 +366,7 @@ export function ReelStage({ scenes = SCENES }: { scenes?: readonly SceneModule[]
         <div className={styles.frame}>
           <div className="shell grid w-full grid-cols-12 items-center gap-8">
             {/* four articles stacked in one cell; all stay in the accessibility tree */}
-            <div className={cn("col-span-5", styles.articles)}>
+            <div ref={articlesRef} className={cn("col-span-5", styles.articles)}>
               {SERVICES.map((s, i) => (
                 <article
                   key={s.id}
@@ -417,7 +426,7 @@ export function ReelStage({ scenes = SCENES }: { scenes?: readonly SceneModule[]
           </div>
         </div>
 
-        {/* release: the K0 row continues to both edges of the frame */}
+        {/* release: the K0 row continues from the copy's gutter to the right edge of the frame */}
         <span ref={seamRef} aria-hidden="true" className={cn("hairline", styles.seam)} />
 
         <Letterbox

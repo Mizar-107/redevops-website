@@ -60,6 +60,13 @@ export const STEPS: readonly ProcessStep[] = [
 export const END_LOG = "› render complete — ready for handover"
 
 /** Sequence length in frames (the timecode readout runs 00:00:00:00 → 00:01:30:00). */
+/**
+ * Where the pinned edit plays: lg width AND at least 600px tall. Below that height the monitor
+ * (bound to the space above the timeline) is too small to hold a step's title and description, so
+ * short screens get the stacked edit. Mirrors `.pinWrap` / `.pinStage` / `.stackWrap` in the module.
+ */
+export const PIN_MQ = "(min-width: 1024px) and (min-height: 600px)"
+
 export const SEQ_FRAMES = 2160
 /** Major ruler ticks every 10% of the sequence. */
 export const RULER_MAJORS = 10

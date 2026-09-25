@@ -15,7 +15,7 @@ export function ChromeLayer() {
       <Grain />
       <ScrubOsd />
       {/* without JS the toggle could not do anything (and motion is already still): don't show a dead control */}
-      <div className="fixed bottom-5 right-6 z-[46] hidden lg:block [html:not(.js)_&]:!hidden">
+      <div className="js-only fixed bottom-5 right-6 z-[46] hidden lg:block">
         <MotionToggle variant="pill" />
       </div>
     </>

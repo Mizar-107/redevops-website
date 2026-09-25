@@ -11,14 +11,15 @@ import { CtaLink } from "@/components/motion/cta-link"
 import { CALENDLY_URL, CONTACT_EMAIL, CONTACT_MAILTO, PRIMARY_CTA_LABEL } from "@/lib/contact"
 import { section } from "@/lib/sections"
 import { DUR_MS, HERO, fms, staggerFor } from "@/lib/motion/tokens"
+import { introRemaining } from "@/lib/motion/pref"
 import { clamp, ease } from "@/lib/motion/math"
 import { useScrub } from "@/hooks/use-scrub"
 import { SignalField } from "./signal-field"
 import s from "./hero.module.css"
 
 const HOME = section("home")
-const SLATE_LONG = `REEL ${HOME.reel} · DEVOPS CONSULTING BY RECEP — HANDS-ON, NOT SLIDEWARE`
-const SLATE_SHORT = `REEL ${HOME.reel} · DEVOPS CONSULTING BY RECEP`
+const SLATE_LABEL = `REEL ${HOME.reel} · DEVOPS CONSULTING BY RECEP`
+const SLATE_CUT = "Hands-on, not slideware"
 
 const L1_TEXT = "Cut cloud waste."
 const L1_WORDS = L1_TEXT.split(" ")
@@ -29,6 +30,13 @@ const BLADE_AT = HERO.blade + HERO.bladeHold
 const HEAL_AT = BLADE_AT + HERO.bladeSweep + HERO.sliceHold
 const HANDBACK_AT = HEAL_AT + HERO.heal
 
+/** Where "confidence." starts on line 2 (fraction of the line) when it sets on one line (≥508px). */
+const ACCENT_AT = 0.45
+/** Earliest skew start: the cut wipe crawls through its first fifth (reaching 0.2 only at ~40% of its
+ *  time), so a word at the start of a line is keyed to where the edge picks up speed and the word
+ *  visibly opens, not to t = 0 (the settle would be spent before most of it is uncovered). */
+const SKEW_MIN_AT = 0.2
+
 /** Timing vars for hero.module.css, all from lib/motion/tokens.ts. */
 const TIMING = {
   "--bl-hold": `${HERO.bladeHold}ms`,
@@ -37,7 +45,10 @@ const TIMING = {
   "--bl-heal": `${HEAL_AT}ms`,
   "--bl-end": `${HANDBACK_AT}ms`,
   "--sliver-at": `${Math.round(0.8 * HERO.bladeSweep)}ms`,
-  "--l2-skew-at": `${HERO.line2 + DUR_MS.f6}ms`,
+  // the skew starts as the wipe edge reaches "confidence.": ~45% in when line 2 sets on one line;
+  // at once where it wraps (<508px, the word starts its own line; hero.module.css picks). Refined on mount.
+  "--l2-skew-at": `${skewAt(ACCENT_AT)}ms`,
+  "--l2-skew-at-wrap": `${skewAt(0)}ms`,
   "--cta-at": `${HERO.ctas}ms`,
 } as CSSProperties
 
@@ -53,11 +64,26 @@ function invCut(u: number) {
   return (lo + hi) / 2
 }
 
+/** ms after --hero-t0 at which the "confidence." skew starts, for the word starting at fraction u of
+ *  line 2: when the line's wipe (f24, cut) edge reaches it. */
+function skewAt(u: number) {
+  return Math.round(HERO.line2 + invCut(clamp(u, SKEW_MIN_AT, 1)) * DUR_MS.f24)
+}
+
+/**
+ * One line-1 glyph run. The real layer holds the text; the clones and the sliver draw the same word
+ * from data-text via ::before (s.ghost), so raw HTML / crawlers / copy see "Cut cloud waste." once
+ * instead of four times, while the glyph boxes stay identical and registered.
+ */
+function Glyphs({ word, ghost }: { word: string; ghost?: boolean }) {
+  return ghost ? <span className={cn(s.g, s.ghost)} data-text={word} /> : <span className={s.g}>{word}</span>
+}
+
 /**
  * Line-1 words. Identical markup for the real layer and both clones (so the slice stays
  * registered); mirrors SplitText's .w/.wi structure so the global intro mask-rise drives all three.
  */
-function L1Words({ wordRef }: { wordRef?: RefObject<HTMLSpanElement | null> }) {
+function L1Words({ wordRef, ghost }: { wordRef?: RefObject<HTMLSpanElement | null>; ghost?: boolean }) {
   return (
     <>
       {L1_WORDS.map((w, i) => (
@@ -67,10 +93,10 @@ function L1Words({ wordRef }: { wordRef?: RefObject<HTMLSpanElement | null> }) {
               ref={i === SLIVER_WORD ? wordRef : undefined}
               className={cn("wi", i === SLIVER_WORD && s.wordHost)}
             >
-              <span className={s.g}>{w}</span>
+              <Glyphs word={w} ghost={ghost} />
               {i === SLIVER_WORD && (
                 <span className={cn(s.sliver, "select-none")} aria-hidden="true">
-                  <span className={s.g}>{w}</span>
+                  <Glyphs word={w} ghost />
                 </span>
               )}
             </span>
@@ -88,6 +114,7 @@ export function HeroSection() {
   const l1Ref = useRef<HTMLSpanElement>(null)
   const horizonRef = useRef<HTMLSpanElement>(null)
   const wasteRef = useRef<HTMLSpanElement>(null)
+  const l2Ref = useRef<HTMLSpanElement>(null)
 
   const { progress } = useScrub(sectionRef, ["start start", "end start"])
   const y1 = useTransform(progress, [0, 1], ["0vh", "-12vh"])
@@ -110,6 +137,25 @@ export function HeroSection() {
     document.fonts?.ready.then(run).catch(() => {})
   }, [])
 
+  // "confidence." skews −8° → 0 as the wipe edge reaches it. CSS already picks the one-line or the
+  // wrapped timing; re-time it from the measured edge for anything in between (font, zoom) — only
+  // while the earliest possible skew is still ahead, so a late hydration never restarts one seen.
+  useEffect(() => {
+    const l2 = l2Ref.current
+    const host = l2?.querySelector<HTMLElement>(".wipe-clip")
+    const acc = l2?.querySelector<HTMLElement>(".accent")
+    if (!l2 || !host || !acc) return
+    const run = () => {
+      if (introRemaining(skewAt(0)) <= 0) return
+      const a = host.getBoundingClientRect()
+      const b = acc.getBoundingClientRect()
+      if (!a.width) return
+      l2.style.setProperty("--l2-skew-at", `${skewAt((b.left - a.left) / a.width)}ms`)
+    }
+    run()
+    document.fonts?.ready.then(run).catch(() => {})
+  }, [])
+
   return (
     <section
       ref={sectionRef}
@@ -124,15 +170,14 @@ export function HeroSection() {
         style={{ ...TIMING, opacity: fade }}
       >
         <div className={s.slateRow}>
-          <p className="slate">
-            <ScrambleText text={SLATE_LONG} trigger="intro" className="slate-label hidden md:inline" />
-            <ScrambleText text={SLATE_SHORT} trigger="intro" className="slate-label whitespace-nowrap md:hidden" />
-            <Hairline draw="start" trigger="intro" delay={DUR_MS.f6} className="slate-rule hidden md:block" />
-          </p>
-          {/* <md: the cut clause becomes a second mono line, and the rule moves down with it */}
-          <p className="slate mt-2 md:hidden">
-            <Reveal as="span" mode="fade" trigger="intro" delay={DUR_MS.f6} className="whitespace-nowrap">
-              Hands-on, not slideware
+          {/* One slate, the system's format: signal label, dim "— cut" and the rule. Below md the
+              cut drops to a second mono line with the rule beside it (s.slate grid); the label wraps
+              rather than clipping on ≤340px screens. */}
+          <p className={cn("slate", s.slate)}>
+            <ScrambleText text={SLATE_LABEL} trigger="intro" className="slate-label" />
+            <Reveal as="span" mode="fade" trigger="intro" delay={DUR_MS.f6} className="slate-cut">
+              <span className="hidden md:inline">— </span>
+              {SLATE_CUT}
             </Reveal>
             <Hairline draw="start" trigger="intro" delay={DUR_MS.f6} className="slate-rule" />
           </p>
@@ -148,10 +193,10 @@ export function HeroSection() {
                 </span>
               </span>
               <span aria-hidden="true" className={cn("split", s.clone, s.top)} data-reveal-intro="mask">
-                <L1Words />
+                <L1Words ghost />
               </span>
               <span aria-hidden="true" className={cn("split", s.clone, s.bot)} data-reveal-intro="mask">
-                <L1Words />
+                <L1Words ghost />
               </span>
               <span aria-hidden="true" className={s.blade}>
                 <span className={s.trail} />
@@ -160,7 +205,7 @@ export function HeroSection() {
             </span>
           </m.span>{" "}
           <span ref={horizonRef} className={s.horizon} data-horizon="" aria-hidden="true" />
-          <m.span className={cn("block", s.scrollOut, s.l2)} style={{ y: y2 }}>
+          <m.span ref={l2Ref} className={cn("block", s.scrollOut, s.l2)} style={{ y: y2 }}>
             <SplitText
               as="span"
               text="Ship with confidence."
@@ -174,11 +219,14 @@ export function HeroSection() {
         </h1>
 
         <div className="max-w-[62rem]">
+          {/* custom intro (s.lede): painted from the first frame, faint, then develops and settles at
+              its beat, so it is never an opacity-0 LCP candidate waiting on the intro */}
           <Reveal
             as="p"
+            mode="custom"
             trigger="intro"
             delay={HERO.lede}
-            className="mt-7 max-w-[60ch] text-lede text-paper-dim text-pretty md:mt-8"
+            className={cn(s.lede, "mt-7 max-w-[60ch] text-lede text-paper-dim text-pretty md:mt-8")}
           >
             ReDevOps partners with growing product teams to rightsize spend, harden infrastructure, and speed up
             delivery — without freezing your roadmap or replacing your engineers.

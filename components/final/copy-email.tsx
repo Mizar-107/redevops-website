@@ -31,7 +31,8 @@ function selectAddress(id: string): boolean {
  * Copies CONTACT_EMAIL. The icon morphs copy → check (two-path stroke draw, f6), the mono label rolls
  * COPY → COPIED, and a polite live region announces it; everything reverts after 2.2s. If the
  * Clipboard API is missing or refuses, the address inside the email CTA is selected instead (and
- * that is announced). The address itself is never animated.
+ * that is announced). The address itself is never animated. Without JS the button does nothing,
+ * so it is not rendered (.js-only); the address stays in the email CTA beside it.
  */
 export function CopyEmail({ selectTargetId = "final-email", className }: CopyEmailProps) {
   const [copied, setCopied] = useState(false)
@@ -75,7 +76,7 @@ export function CopyEmail({ selectTargetId = "final-email", className }: CopyEma
         aria-label="Copy email address"
         onClick={onClick}
         data-state={copied ? "copied" : "idle"}
-        className={cn("vf-host", s.copy, className)}
+        className={cn("vf-host js-only", s.copy, className)}
       >
         <svg className={s.copyIcon} viewBox="0 0 18 18" aria-hidden="true">
           <path className={s.glyphPath} d="M6.5 4.5V3.2c0-.66.54-1.2 1.2-1.2h6.6c.66 0 1.2.54 1.2 1.2v6.6c0 .66-.54 1.2-1.2 1.2H13" pathLength={1} />
@@ -88,7 +89,10 @@ export function CopyEmail({ selectTargetId = "final-email", className }: CopyEma
         </span>
         <ViewfinderFrame />
       </button>
-      <span role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+      {/* role="status" is already a polite live region. No explicit aria-live: Radix's modal
+          (aria-hidden's hideOthers) keeps every [aria-live] and its ancestors exposed, which would
+          leave all of <main> readable behind the open mobile menu. */}
+      <span role="status" aria-atomic="true" className="sr-only">
         {message}
       </span>
     </>

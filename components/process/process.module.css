@@ -12,11 +12,22 @@
 }
 .mark {
   position: relative;
+  z-index: 0; /* own stacking context: the underline paints under the glyphs, over the page */
   display: inline-block;
   white-space: nowrap;
 }
+/* ink-skip: the line runs under the type, and a page-coloured halo around the glyphs cuts a clean
+   gap where the descender of the "p" crosses it (typographic skip-ink, not a strike-through). The
+   halo is invisible on the page ground; forced colours drops text-shadow along with the line. */
+.mark :global(.wi) {
+  /* horizontal only: two clean cuts either side of the stem, no box under the descender */
+  text-shadow:
+    0.05em 0 0 var(--ink-950),
+    -0.05em 0 0 var(--ink-950);
+}
 .ul {
   position: absolute;
+  z-index: -1;
   left: 0;
   width: 100%;
   top: calc(100% - 0.06em);
@@ -86,6 +97,23 @@ html[data-ready][data-motion="full"] .title:not([data-inview]) .ulDia {
   }
 }
 
+/* ---------------------------------------------------------------- layout switch */
+/* The pinned edit plays on lg-wide AND ≥600px-tall viewports with motion full (PIN_MQ in
+   process-data.ts, which the stage's JS mirrors); everything else gets the stacked edit. Below
+   600px tall the monitor would be under ~220px high: too small for a step's title + description. */
+@media (min-width: 1024px) and (min-height: 600px) {
+  html[data-motion="full"] .pinWrap {
+    display: block;
+    height: 240svh;
+  }
+  html[data-motion="full"] .pinStage {
+    position: sticky;
+  }
+  html[data-motion="full"] .stackWrap {
+    display: none;
+  }
+}
+
 /* ---------------------------------------------------------------- pinned stage */
 .stage {
   background: var(--ink-950);
@@ -104,6 +132,12 @@ html[data-ready][data-motion="full"] .title:not([data-inview]) .ulDia {
   column-gap: 2rem;
   padding-top: 0.5rem;
   padding-bottom: 1.5rem;
+}
+/* short desktop viewports: every pixel of height is monitor height (its width follows at 16:9) */
+@media (max-height: 43.75rem) {
+  .viewer {
+    padding-bottom: 0.75rem;
+  }
 }
 
 /* ---------------------------------------------------------------- program monitor */

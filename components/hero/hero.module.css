@@ -16,6 +16,22 @@
   inherits: true;
   initial-value: 0;
 }
+/* the blade head's visibility: animated on .l1 next to --blade, so the head and the sweep it rides
+   share one clock (a separate opacity animation on .head can start a frame or more apart) */
+@property --head {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+/* hand-back 0 → 1 at the end of the heal: the real text takes over from the clones. It lives in .l1's
+   own animation list (with the sweep and heal) so it shares their start time. A 1ms constant-keyframe
+   animation after a long delay gets started in an earlier frame by Chromium (measured 117–317ms
+   early), which cut the spring heal short. */
+@property --hb {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
 
 /* ---------------------------------------------------------------- layout */
 
@@ -28,6 +44,12 @@
      (line-height .92). The poster sits on it until the field measures the real row into --hy, so
      the SSR / no-JS / no-WebGL frame is already on the throughline and nothing jumps later. */
   --hy0: calc(var(--header-h) + 10svh + 2.15rem + var(--slate-gap) + 0.92 * var(--l1-size));
+}
+@media (max-width: 348px) {
+  .hero {
+    /* the slate label wraps onto a second line here */
+    --hy0: calc(var(--header-h) + 10svh + 2.975rem + var(--slate-gap) + 0.92 * var(--l1-size));
+  }
 }
 @media (min-width: 768px) {
   .hero {
@@ -53,6 +75,24 @@
 .slateRow {
   margin-bottom: var(--slate-gap);
 }
+/* <md: label on its own row (wrapping if it must), then the cut with the rule beside it */
+.slateRow .slate {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 0.75rem;
+  row-gap: 0.5rem;
+}
+.slateRow .slate > :global(.slate-label) {
+  grid-column: 1 / -1;
+}
+@media (min-width: 768px) {
+  .slateRow .slate {
+    display: flex;
+  }
+  .slateRow .slate > :global(.slate-label) {
+    grid-column: auto;
+  }
+}
 /* the slate rule draws on the blade's easing (spec: rule f18 cut) */
 html[data-motion="full"] .slateRow :global(.slate-rule) {
   animation-timing-function: var(--ease-cut);
@@ -71,9 +111,10 @@ html[data-motion="full"] .slateRow :global(.slate-rule) {
 /* ---------------------------------------------------------------- line 1 + the blade */
 
 .l1 {
+  /* No nowrap: line 1 is sized to fit one line with ~15% to spare at every width, so it never wraps
+     normally, but user text-spacing overrides (WCAG 1.4.12) can wrap it instead of clipping it. */
   display: block;
   position: relative;
-  white-space: nowrap;
   font-size: var(--l1-size, min(clamp(2.6rem, 1.2rem + 6vw, 7.5rem), 10.4vw));
 }
 .layer {
@@ -98,6 +139,10 @@ html[data-motion="full"] .slateRow :global(.slate-rule) {
 
 .wordHost {
   position: relative;
+}
+/* clone / sliver glyphs: drawn from data-text so the raw HTML holds the words once */
+.ghost::before {
+  content: attr(data-text);
 }
 .sliver {
   position: absolute;
@@ -130,7 +175,7 @@ html[data-motion="full"] .slateRow :global(.slate-rule) {
   position: absolute;
   inset: 0;
   transform: translateX(calc(var(--blade) * 100%));
-  opacity: 0;
+  opacity: var(--head);
 }
 .head::before {
   /* 96px hot gradient ending at the cutting point */
@@ -167,25 +212,24 @@ html[data-motion="full"] .l1 {
   animation:
     blade-sweep var(--bl-dur) var(--ease-cut) calc(var(--hero-t0) + var(--bl-at)) both,
     slice-open var(--f4) linear calc(var(--hero-t0) + var(--bl-at)) both,
-    slice-heal var(--f9) var(--spring-clap) calc(var(--hero-t0) + var(--bl-heal)) forwards;
+    slice-heal var(--f9) var(--spring-clap) calc(var(--hero-t0) + var(--bl-heal)) forwards,
+    blade-head calc(var(--bl-hold) + var(--bl-dur)) linear calc(var(--hero-t0) + var(--bl-at) - var(--bl-hold)) both,
+    hand-back 1ms linear calc(var(--hero-t0) + var(--bl-end)) forwards;
 }
 
 html[data-motion="full"] .real {
-  clip-path: inset(-0.3em -0.2em -0.3em calc(var(--blade) * 100%));
-  animation: handback-real 1ms linear calc(var(--hero-t0) + var(--bl-end)) forwards;
+  /* after the hand-back (--hb = 1) the left inset is 0: the real, selectable text is fully shown */
+  clip-path: inset(-0.3em -0.2em -0.3em calc(var(--blade) * (1 - var(--hb)) * 100%));
 }
 html[data-motion="full"] .top {
   clip-path: inset(-0.3em calc((1 - var(--blade)) * 100%) 43% -0.2em);
   transform: translate(calc(var(--slice) * -0.06em), calc(var(--slice) * -0.015em));
-  animation: handback-clone 1ms linear calc(var(--hero-t0) + var(--bl-end)) forwards;
+  opacity: calc(1 - var(--hb));
 }
 html[data-motion="full"] .bot {
   clip-path: inset(57% calc((1 - var(--blade)) * 100%) -0.3em -0.2em);
   transform: translate(calc(var(--slice) * 0.03em), calc(var(--slice) * 0.01em));
-  animation: handback-clone 1ms linear calc(var(--hero-t0) + var(--bl-end)) forwards;
-}
-html[data-motion="full"] .head {
-  animation: blade-head calc(var(--bl-hold) + var(--bl-dur)) linear calc(var(--hero-t0) + var(--bl-at) - var(--bl-hold)) both;
+  opacity: calc(1 - var(--hb));
 }
 html[data-motion="full"] .sliver {
   animation: sliver-fall var(--f12) var(--ease-exit) calc(var(--hero-t0) + var(--bl-at) + var(--sliver-at, 448ms)) both;
@@ -215,33 +259,27 @@ html[data-motion="full"] .sliver {
     --slice: 0;
   }
 }
-/* both keyframes explicit: an implicit from-keyframe (the var-driven inset) does not reliably
-   resolve to the end value when held by fill-mode forwards */
-@keyframes handback-real {
-  from,
-  to {
-    clip-path: none;
+@keyframes hand-back {
+  from {
+    --hb: 0;
   }
-}
-@keyframes handback-clone {
-  from,
   to {
-    visibility: hidden;
+    --hb: 1;
   }
 }
 @keyframes blade-head {
   /* appears at the start and holds f2 (the page's one anticipation beat), then rides the sweep */
   0% {
-    opacity: 0;
+    --head: 0;
   }
   8% {
-    opacity: 1;
+    --head: 1;
   }
   86% {
-    opacity: 1;
+    --head: 1;
   }
   100% {
-    opacity: 0;
+    --head: 0;
   }
 }
 @keyframes sliver-fall {
@@ -257,9 +295,35 @@ html[data-motion="full"] .l2 :global(.accent) {
   transform-origin: 0 100%;
   animation: accent-skew var(--f24) var(--ease-title) calc(var(--hero-t0) + var(--l2-skew-at)) both;
 }
+@media (max-width: 507.98px) {
+  /* line 2 wraps: "confidence." starts its own line, so the wipe reaches it at once */
+  .l2 {
+    --l2-skew-at: var(--l2-skew-at-wrap);
+  }
+}
 @keyframes accent-skew {
   from {
     transform: skewX(-8deg);
+  }
+}
+
+/* ---------------------------------------------------------------- lede */
+
+/* Painted from the first frame (faint, 12px low) so it is an LCP candidate at first paint; at its
+   beat it develops to full tone and settles. Custom intro: the global rise/fade does not apply. */
+html[data-motion="full"] .lede {
+  animation:
+    lede-lift var(--f12) var(--ease-title) var(--delay-intro) both,
+    lede-develop var(--f9) linear var(--delay-intro) both;
+}
+@keyframes lede-lift {
+  from {
+    transform: translateY(12px);
+  }
+}
+@keyframes lede-develop {
+  from {
+    color: rgb(154 163 178 / 0.14); /* paper-dim, latent */
   }
 }
 
