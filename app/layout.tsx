@@ -1,11 +1,27 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { GeistSans } from "geist/font/sans"
+import { GeistMono } from "geist/font/mono"
 import "./globals.css"
 import { cn } from "@/lib/utils"
 import { CALENDLY_URL, CONTACT_EMAIL, SITE_URL } from "@/lib/contact"
+import { MotionProvider } from "@/components/motion/motion-provider"
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
+/**
+ * Pre-paint boot (runs before first paint, before React):
+ * - html.js; html[data-motion] = full | reduce (OS setting, overridden by the MOTION toggle in localStorage)
+ * - html[data-intro] = play (first visit this session, motion full, no hash) | seen; any input during play → skip
+ *   (Tab / modifier keys excepted, so the Skip intro button stays keyboard-reachable)
+ * - window.__rdoIntro.t0 = the intro clock origin shared with CSS intro animations
+ * - bfcache restores never replay the intro
+ */
+const BOOT = `(function(){var d=document.documentElement,m="full",i="seen";d.classList.add("js");
+try{var p=localStorage.getItem("rdo:motion");var rm=matchMedia("(prefers-reduced-motion: reduce)").matches;if(p==="off"||(rm&&p!=="on"))m="reduce"}catch(e){}
+d.setAttribute("data-motion",m);
+try{if(m==="full"&&!location.hash&&!sessionStorage.getItem("rdo:intro")){i="play";sessionStorage.setItem("rdo:intro","1")}}catch(e){}
+d.setAttribute("data-intro",i);window.__rdoIntro={t0:performance.now(),mode:i};
+if(i==="play"){var ev=["keydown","pointerdown","wheel","touchstart"],sk=function(e){if(e&&e.type==="keydown"&&/^(Tab|Shift|Control|Alt|Meta|CapsLock)$/.test(e.key))return;if(d.getAttribute("data-intro")==="play")d.setAttribute("data-intro","skip");off()},off=function(){ev.forEach(function(e){removeEventListener(e,sk,true)})};ev.forEach(function(e){addEventListener(e,sk,{capture:true,passive:true})});setTimeout(off,1500)}
+addEventListener("pageshow",function(e){if(e.persisted&&d.getAttribute("data-intro")==="play")d.setAttribute("data-intro","seen")})})();`
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -80,13 +96,22 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className={cn("min-h-screen bg-background font-sans antialiased", inter.variable)}>
+    <html lang="en" className={cn("dark", GeistSans.variable, GeistMono.variable)} suppressHydrationWarning>
+      <head>
+        <script id="rdo-boot" dangerouslySetInnerHTML={{ __html: BOOT }} />
+      </head>
+      <body className="min-h-screen bg-ink-950 font-sans text-paper antialiased">
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:rounded-md focus:bg-signal focus:px-4 focus:py-2 focus:font-semibold focus:text-ink-950"
+        >
+          Skip to content
+        </a>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        {children}
+        <MotionProvider>{children}</MotionProvider>
       </body>
     </html>
   )

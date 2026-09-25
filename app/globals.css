@@ -1,71 +1,954 @@
 @tailwind base;
 @tailwind components;
-@tailwind utilities;
+
+/* =====================================================================================
+   THROUGHLINE — foundation stylesheet
+   Tokens · base · layout · reveal system · primitives (hairline, viewfinder, slate,
+   shot list, CTA, motion toggle) · loops · reduced-motion safety net · forced colours.
+   Hidden starting states apply ONLY under html[data-ready][data-motion="full"] (viewport
+   reveals) or html[data-motion="full"] (intro reveals): SSR HTML is always the final state.
+   ===================================================================================== */
+
+/* Reveal timing vars never inherit, so nested reveals don't double their delays. */
+@property --d {
+  syntax: "<time>";
+  inherits: false;
+  initial-value: 0ms;
+}
+@property --i {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+@property --st {
+  syntax: "<time>";
+  inherits: false;
+  initial-value: 83ms;
+}
+/* SplitText wipe: the clip and its gate bar both read these, animated on .wipe-host, so they can never
+   start in different frames (compositor vs main thread) and drift out of registration. */
+@property --wipe {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+@property --gate-o {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
 
 @layer base {
   :root {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 190 95% 55%; /* Cyan */
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 190 95% 55%;
-    --radius: 0.5rem;
-  }
-}
+    /* palette (plain hex for CSS use) */
+    --ink-950: #05060a;
+    --ink-900: #0a0d14;
+    --ink-850: #0e121b;
+    --line: #1c2230;
+    --line-strong: #2a3242;
+    --paper: #eceff4;
+    --paper-dim: #9aa3b2;
+    --paper-mute: #5d6677;
+    --signal: #22d3ee;
+    --signal-hot: #7cf4ff;
+    --signal-deep: #0e7490;
+    --violet: #8b5cf6;
+    --tungsten: #ffb547;
+    --alarm: #ff4d5e;
+    --go: #34d399;
 
-@layer base {
+    /* shadcn remap */
+    --background: 228 33% 3%;
+    --foreground: 218 27% 94%;
+    --card: 222 33% 6%;
+    --card-foreground: 218 27% 94%;
+    --popover: 222 33% 6%;
+    --popover-foreground: 218 27% 94%;
+    --primary: 188 86% 53%;
+    --primary-foreground: 228 33% 3%;
+    --secondary: 222 26% 15%;
+    --secondary-foreground: 218 27% 94%;
+    --muted: 222 26% 15%;
+    --muted-foreground: 218 13% 65%;
+    --accent: 222 26% 15%;
+    --accent-foreground: 218 27% 94%;
+    --destructive: 354 100% 65%;
+    --destructive-foreground: 218 27% 94%;
+    --border: 222 26% 15%;
+    --input: 222 26% 15%;
+    --ring: 188 86% 53%;
+    --radius: 0.625rem;
+
+    /* easings (== lib/motion/tokens.ts EASE) */
+    --ease-title: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-cut: cubic-bezier(0.76, 0, 0.24, 1);
+    --ease-iris: cubic-bezier(0.87, 0, 0.13, 1);
+    --ease-exit: cubic-bezier(0.7, 0, 0.84, 0);
+    --ease-clap: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-drift: cubic-bezier(0.45, 0, 0.55, 1);
+    --ease-ui: cubic-bezier(0.22, 1, 0.36, 1);
+    --spring-clap: var(--ease-clap);
+    --spring-snap: var(--ease-ui);
+
+    /* 24 fps frame durations */
+    --f1: 42ms;
+    --f2: 83ms;
+    --f3: 125ms;
+    --f4: 167ms;
+    --f6: 250ms;
+    --f9: 375ms;
+    --f12: 500ms;
+    --f14: 583ms;
+    --f18: 750ms;
+    --f24: 1000ms;
+    --f36: 1500ms;
+
+    /* layout */
+    --pad: 1rem;
+    --maxw: 80rem;
+    --header-h: 64px;
+    --hero-t0: 0ms;
+
+    interpolate-size: allow-keywords;
+  }
+
+  @supports (animation-timing-function: linear(0, 1)) {
+    :root {
+      /* sampled from the framer spring equation: SPRING.clap (375ms) / SPRING.snap (255ms) */
+      --spring-clap: linear(
+        0, 0.071, 0.236, 0.434, 0.626, 0.789, 0.914, 0.999, 1.05, 1.074, 1.078, 1.07, 1.057, 1.041, 1.026,
+        1.014, 1.005, 0.999, 0.996, 0.994, 0.994, 0.995, 0.996, 0.997, 1
+      );
+      --spring-snap: linear(
+        0, 0.04, 0.132, 0.246, 0.363, 0.474, 0.573, 0.658, 0.73, 0.789, 0.836, 0.874, 0.904, 0.928, 0.946,
+        0.96, 0.97, 0.978, 0.984, 0.989, 0.992, 0.994, 0.996, 0.997, 1
+      );
+    }
+  }
+
+  @media (min-width: 768px) {
+    :root {
+      --pad: 1.5rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    :root {
+      --pad: 2rem;
+    }
+  }
+
+  html[data-intro="play"] {
+    --hero-t0: 700ms;
+  }
+  html[data-intro="seen"] {
+    --hero-t0: 60ms;
+  }
+  html[data-intro="skip"] {
+    --hero-t0: 0ms;
+  }
+  /* Latched when MOTION is switched on after the intro window: every intro-timed animation's delay is
+     now in the past, so it lands on the final frame instead of replaying. Scoped to the subtrees that
+     read --hero-t0 (a style change on <html> itself would force a whole-document recalc). */
+  html[data-intro-done] header,
+  html[data-intro-done] #home {
+    --hero-t0: -10000ms;
+  }
+
   * {
     @apply border-border;
   }
-  body {
-    @apply bg-background text-foreground;
+  html {
+    /* positioned so framer's useScroll container (documentElement) measures offsets without warnings */
+    position: relative;
+    scroll-padding-top: 80px;
+    background: var(--ink-950);
+    color-scheme: dark;
+    -webkit-text-size-adjust: 100%;
+  }
+  /* only after hydration: the browser's own scroll to a #fragment on load must jump, not sweep the page */
+  html[data-ready][data-motion="full"] {
     scroll-behavior: smooth;
   }
+  body {
+    @apply bg-background text-foreground;
+    overflow-x: clip;
+  }
+  ::selection {
+    background: rgba(34, 211, 238, 0.3);
+    color: var(--paper);
+  }
+  :focus-visible {
+    outline: 2px solid var(--signal) !important;
+    outline-offset: 3px;
+  }
+  /* programmatic landing targets (skip link → main, mobile-menu jumps → section) are not controls */
+  :is(main, section)[tabindex="-1"]:focus-visible {
+    outline: none !important;
+  }
+  .font-mono {
+    font-feature-settings: "tnum" 1, "zero" 1;
+  }
 }
 
-@layer utilities {
-  .animation-delay-2000 {
-    animation-delay: 2s;
+/* Primitive styles are plain CSS (NOT @layer components) so Tailwind never purges classes that are
+   composed at runtime (e.g. `cta-${variant}`). They sit BEFORE utilities so utilities still win. */
+/* ---------------------------------------------------------------- layout */
+.shell {
+  width: 100%;
+  max-width: calc(var(--maxw) + 2 * var(--pad));
+  margin-inline: auto;
+  padding-inline: var(--pad);
+}
+/* full-bleed blocks whose content edges match .shell */
+.gutter {
+  padding-inline: max(var(--pad), calc((100% - var(--maxw)) / 2));
+}
+/* section vignette for full-bleed reels (host must be position: relative) */
+.vignette::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(120% 80% at 50% 40%, transparent 55%, rgba(0, 0, 0, 0.55));
+}
+
+/* ---------------------------------------------------------------- the throughline */
+.hairline {
+  display: block;
+  background: rgba(34, 211, 238, 0.6);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.35);
+  pointer-events: none;
+}
+.hairline-x {
+  height: 1px;
+  width: 100%;
+}
+.hairline-y {
+  width: 1px;
+  height: 100%;
+}
+.hairline-flat {
+  box-shadow: none;
+}
+
+/* ---------------------------------------------------------------- display type */
+.accent {
+  background-image: linear-gradient(100deg, #22d3ee 0%, #38bdf8 45%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.split .w {
+  display: inline-block;
+  overflow: clip;
+  padding: 0 0.04em 0.12em;
+  margin: 0 -0.04em -0.12em;
+  vertical-align: top;
+}
+.split .wi {
+  display: inline-block;
+}
+.split-wipe .wipe-host {
+  position: relative;
+  display: inline-block;
+}
+.split-wipe .wipe-clip {
+  display: inline-block;
+}
+.split-wipe .gate {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+}
+.split-wipe .gate::before {
+  content: "";
+  position: absolute;
+  top: 0.08em;
+  bottom: 0.08em;
+  left: -2px;
+  width: 2px;
+  background: var(--signal);
+  box-shadow: 0 0 24px rgba(34, 211, 238, 0.55);
+}
+
+/* ---------------------------------------------------------------- slate */
+.slate {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  line-height: 1.2;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--paper-mute);
+  font-feature-settings: "tnum" 1, "zero" 1;
+}
+.slate-center {
+  justify-content: center;
+}
+.slate .slate-label {
+  color: var(--signal);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+@media (min-width: 768px) {
+  .slate .slate-label {
+    white-space: nowrap;
   }
-  .animation-delay-4000 {
-    animation-delay: 4s;
+}
+.slate .slate-cut {
+  color: var(--paper-mute);
+  white-space: nowrap;
+}
+.slate .slate-rule {
+  flex: 1 1 0;
+  min-width: 24px;
+  max-width: 240px;
+}
+
+/* ---------------------------------------------------------------- viewfinder brackets */
+.vf-c {
+  position: absolute;
+  width: var(--vf-arm, 10px);
+  height: var(--vf-arm, 10px);
+  pointer-events: none;
+  border-color: var(--signal);
+  border-style: solid;
+  border-width: 0;
+  opacity: 0;
+  transition:
+    opacity var(--f6) var(--ease-title),
+    transform var(--f6) var(--ease-title);
+}
+.vf-tl {
+  top: calc(-1 * var(--vf-inset, 6px));
+  left: calc(-1 * var(--vf-inset, 6px));
+  border-top-width: 1px;
+  border-left-width: 1px;
+  transform: translate(-6px, -6px);
+}
+.vf-tr {
+  top: calc(-1 * var(--vf-inset, 6px));
+  right: calc(-1 * var(--vf-inset, 6px));
+  border-top-width: 1px;
+  border-right-width: 1px;
+  transform: translate(6px, -6px);
+}
+.vf-bl {
+  bottom: calc(-1 * var(--vf-inset, 6px));
+  left: calc(-1 * var(--vf-inset, 6px));
+  border-bottom-width: 1px;
+  border-left-width: 1px;
+  transform: translate(-6px, 6px);
+}
+.vf-br {
+  bottom: calc(-1 * var(--vf-inset, 6px));
+  right: calc(-1 * var(--vf-inset, 6px));
+  border-bottom-width: 1px;
+  border-right-width: 1px;
+  transform: translate(6px, 6px);
+}
+.vf-c.vf-on,
+.vf-host:focus-visible > .vf-c,
+.vf-host:has(:focus-visible) > .vf-c {
+  opacity: 1;
+  transform: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .vf-host:hover > .vf-c {
+    opacity: 1;
+    transform: none;
   }
 }
 
-#tsparticles {
-  position: fixed;
-  top: 0;
-  left: 0;
+/* ---------------------------------------------------------------- shot list */
+.shot-list {
+  display: grid;
+  gap: 0.75rem;
+}
+.shot-item {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  color: #c7ced9;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}
+.shot-list-lg .shot-item {
+  font-size: 1rem;
+}
+.shot-check {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 0.15em;
+  fill: none;
+  stroke: var(--signal);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.shot-check circle {
+  stroke: rgba(34, 211, 238, 0.45);
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+.shot-check path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+
+/* ---------------------------------------------------------------- CTA */
+.cta {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color 150ms linear,
+    background-color 150ms linear,
+    border-color 150ms linear;
+}
+.cta-sm {
+  min-height: 36px;
+  padding: 0 0.875rem;
+  font-size: 0.875rem;
+}
+.cta-md {
+  min-height: 44px;
+  padding: 0 1.25rem;
+  font-size: 0.9375rem;
+}
+.cta-lg {
+  min-height: 52px;
+  padding: 0 1.5rem;
+  font-size: 1rem;
+}
+.cta-xl {
+  min-height: 60px;
+  padding: 0 2rem;
+  font-size: 1.0625rem;
+}
+.cta-label {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+}
+.cta-text {
+  position: relative;
+}
+.cta-icon {
+  display: inline-flex;
+  width: 1.1em;
+  height: 1.1em;
+  flex: none;
+}
+.cta-icon svg {
   width: 100%;
   height: 100%;
-  z-index: 0;
+}
+.cta-icon-loop {
+  position: relative;
+  overflow: clip;
+}
+.cta-icon-loop > svg {
+  transition: transform var(--f9) var(--ease-cut);
+}
+.cta-icon-loop > svg + svg {
+  position: absolute;
+  inset: 0;
+  transform: translateX(-130%);
 }
 
-@keyframes blob {
+/* primary */
+.cta-primary {
+  background: var(--signal);
+  color: var(--ink-950);
+  box-shadow: 0 10px 30px -12px rgba(34, 211, 238, 0.55);
+}
+.cta-surface {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: clip;
+  pointer-events: none;
+  z-index: 1;
+}
+.cta-fill {
+  position: absolute;
+  inset: 0;
+  background: var(--signal-hot);
+  clip-path: circle(0 at var(--ex, 50%) var(--ey, 50%));
+  transition: clip-path var(--f6) var(--ease-exit);
+}
+.cta-shine {
+  position: absolute;
+  inset: 0;
+}
+.cta-shine::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 30%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: translateX(-120%) skewX(-20deg);
+}
+.cta-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    0 0 0 1px rgba(124, 244, 255, 0.5),
+    0 0 42px 4px rgba(34, 211, 238, 0.45);
+  opacity: 0;
+  transition: opacity var(--f18) var(--ease-title);
+  pointer-events: none;
+  z-index: 0;
+}
+.cta-underline {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: -10px;
+  height: 1px;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--f18) var(--ease-title);
+}
+.cta.is-lit .cta-underline {
+  transform: none;
+}
+.cta.is-lit .cta-glow {
+  opacity: 1;
+}
+
+/* secondary */
+.cta-secondary {
+  color: var(--paper);
+  border: 1px solid var(--line-strong);
+  background: rgba(5, 6, 10, 0.4);
+}
+.cta-secondary.cta-drawn {
+  border-color: transparent;
+}
+.cta-border {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.cta-border rect {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  width: calc(100% - 1px);
+  height: calc(100% - 1px);
+  transition: stroke 150ms linear;
+}
+
+/* ghost */
+.cta-ghost {
+  color: var(--paper-dim);
+  padding-inline: 0.5rem;
+}
+.cta-ghost .cta-text::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--f9) var(--ease-cut);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cta-secondary:hover,
+  .cta-ghost:hover {
+    color: var(--signal);
+  }
+  .cta-secondary:hover .cta-border rect {
+    stroke: rgba(34, 211, 238, 0.6);
+  }
+  .cta-secondary:not(.cta-drawn):hover {
+    border-color: rgba(34, 211, 238, 0.6);
+  }
+  .cta-ghost:hover .cta-text::after {
+    transform: none;
+  }
+  html:not([data-motion="full"]) .cta-primary:hover {
+    background: var(--signal-hot);
+  }
+  html[data-motion="full"] .cta-primary:hover .cta-fill {
+    clip-path: circle(150% at var(--ex, 50%) var(--ey, 50%));
+    transition: clip-path var(--f9) var(--ease-cut);
+  }
+  html[data-motion="full"] .cta-primary:hover .cta-shine::before {
+    transform: translateX(420%) skewX(-20deg);
+    transition: transform var(--f18) var(--ease-title);
+  }
+  html[data-motion="full"] .cta:hover .cta-icon-loop > svg:first-child {
+    transform: translateX(130%);
+  }
+  html[data-motion="full"] .cta:hover .cta-icon-loop > svg + svg {
+    transform: none;
+  }
+}
+html[data-motion="full"] .cta {
+  transition:
+    color 150ms linear,
+    background-color 150ms linear,
+    border-color 150ms linear,
+    transform var(--f9) var(--spring-clap);
+}
+html[data-motion="full"] .cta:active {
+  transform: scale(0.97);
+  transition-duration: 80ms;
+}
+
+/* phones: long CTA labels (the email address) wrap instead of widening the page */
+@media (max-width: 639px) {
+  .cta {
+    white-space: normal;
+    text-align: center;
+    padding-block: 0.625rem;
+  }
+  .cta-text {
+    overflow-wrap: anywhere;
+  }
+}
+
+/* the finale's horizon poster draws its streak row only once the field has measured it */
+[data-signal-field="horizon"]:not([data-hy]) [data-poster-row] {
+  display: none;
+}
+
+/* controls that do nothing without JS are not rendered for no-JS visitors */
+html:not(.js) .js-only {
+  display: none !important;
+}
+
+/* ---------------------------------------------------------------- motion toggle */
+.motion-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  font-weight: 500;
+  color: var(--paper-dim);
+  transition: color 150ms linear;
+}
+.motion-toggle:hover {
+  color: var(--paper);
+}
+.motion-toggle-pill {
+  height: 28px;
+  padding: 0 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(10, 13, 20, 0.8);
+}
+.motion-toggle-inline {
+  min-height: 44px;
+}
+.motion-toggle-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--paper-mute);
+}
+.motion-toggle[aria-pressed="true"] .motion-toggle-dot {
+  background: var(--signal);
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.7);
+}
+.motion-toggle[aria-pressed="true"] .motion-toggle-state {
+  color: var(--signal);
+}
+
+@tailwind utilities;
+
+
+/* =====================================================================================
+   Reveal system (viewport-triggered). MotionBoot marks [data-inview].
+   ===================================================================================== */
+html[data-ready][data-motion="full"] [data-reveal="mask"]:not([data-inview]) .wi {
+  transform: translateY(110%);
+}
+html[data-ready][data-motion="full"] [data-reveal="wipe"]:not(.split):not([data-inview]) {
+  clip-path: inset(0 100% 0 0);
+}
+html[data-ready][data-motion="full"] .split[data-reveal="wipe"]:not([data-inview]) .wipe-clip {
+  clip-path: inset(0 100% 0 0);
+}
+html[data-ready][data-motion="full"] .split[data-reveal="wipe"]:not([data-inview]) .gate {
+  opacity: 1;
+  transform: translateX(0);
+}
+html[data-ready][data-motion="full"] [data-reveal="rise"]:not([data-inview]) {
+  opacity: 0;
+  transform: translateY(12px);
+}
+html[data-ready][data-motion="full"] [data-reveal="fade"]:not([data-inview]) {
+  opacity: 0;
+}
+html[data-ready][data-motion="full"] [data-reveal="draw"]:not([data-inview]) {
+  transform: scaleX(0);
+}
+html[data-ready][data-motion="full"] [data-reveal="draw"].is-y:not([data-inview]) {
+  transform: scaleY(0);
+}
+
+[data-reveal],
+[data-reveal-intro] {
+  --delay: calc(var(--d, 0ms) + var(--i, 0) * var(--st, 83ms));
+}
+[data-inview="1"][data-reveal="mask"] .wi {
+  transition: transform var(--f18) var(--ease-title) var(--wd, 0ms);
+}
+[data-inview="1"][data-reveal="wipe"]:not(.split) {
+  transition: clip-path var(--f24) var(--ease-cut) var(--delay);
+}
+.split[data-inview="1"][data-reveal="wipe"] .wipe-clip {
+  transition: clip-path var(--f24) var(--ease-cut) var(--sd, 0ms);
+}
+.split[data-inview="1"][data-reveal="wipe"] .gate {
+  transform: translateX(100%);
+  opacity: 0;
+  transition:
+    transform var(--f24) var(--ease-cut) var(--sd, 0ms),
+    opacity var(--f6) linear calc(var(--sd, 0ms) + var(--f24));
+}
+[data-inview="1"][data-reveal="rise"] {
+  transition:
+    transform var(--f12) var(--ease-title) var(--delay),
+    opacity 200ms linear var(--delay);
+}
+[data-inview="1"][data-reveal="fade"] {
+  transition: opacity var(--f12) linear var(--delay);
+}
+[data-inview="1"][data-reveal="draw"] {
+  transition: transform var(--f18) var(--ease-title) var(--delay);
+}
+
+/* shot list (data-reveal="custom" on the <ul>) */
+html[data-ready][data-motion="full"] .shot-list:not([data-inview]) .shot-check circle,
+html[data-ready][data-motion="full"] .shot-list:not([data-inview]) .shot-check path {
+  stroke-dashoffset: 1;
+}
+html[data-ready][data-motion="full"] .shot-list:not([data-inview]) .shot-text {
+  opacity: 0;
+  transform: translateX(-4px);
+}
+.shot-list[data-inview="1"] .shot-item {
+  --shot: calc(var(--i, 0) * var(--f6));
+}
+.shot-list[data-inview="1"] .shot-check circle {
+  transition: stroke-dashoffset var(--f6) var(--ease-cut) var(--shot);
+}
+.shot-list[data-inview="1"] .shot-check path {
+  transition: stroke-dashoffset var(--f4) var(--ease-cut) calc(var(--shot) + var(--f6));
+}
+.shot-list[data-inview="1"] .shot-text {
+  display: inline-block;
+  transition:
+    opacity var(--f9) linear calc(var(--shot) + var(--f6)),
+    transform var(--f12) var(--ease-title) calc(var(--shot) + var(--f6));
+}
+
+/* CTA drawn border (data-reveal="custom" on .cta-drawn). --d is non-inheriting: pass the CTA's delay down. */
+.cta-drawn .cta-border,
+.cta-drawn .cta-border rect {
+  --d: inherit;
+}
+html[data-ready][data-motion="full"] .cta-drawn[data-reveal]:not([data-inview]) .cta-border rect {
+  stroke-dashoffset: 1;
+}
+.cta-drawn[data-inview="1"] .cta-border rect {
+  transition:
+    stroke-dashoffset var(--f18) var(--ease-title) var(--d, 0ms),
+    stroke 150ms linear;
+}
+
+/* =====================================================================================
+   Intro reveals (CSS-timed from --hero-t0; never wait for hydration)
+   ===================================================================================== */
+@keyframes rdo-lift {
+  from {
+    transform: translateY(12px);
+  }
+}
+@keyframes rdo-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes rdo-mask {
+  from {
+    transform: translateY(110%);
+  }
+}
+@keyframes rdo-wipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes rdo-gate {
   0% {
-    transform: translate(0px, 0px) scale(1);
+    transform: translateX(0);
+    opacity: 0;
   }
-  33% {
-    transform: translate(30px, -50px) scale(1.1);
+  4% {
+    opacity: 1;
   }
-  66% {
-    transform: translate(-20px, 20px) scale(0.9);
+  96% {
+    opacity: 1;
   }
   100% {
-    transform: translate(0px, 0px) scale(1);
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+@keyframes rdo-draw-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes rdo-draw-y {
+  from {
+    transform: scaleY(0);
+  }
+}
+@keyframes rdo-stroke {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+
+html[data-motion="full"] [data-reveal-intro] {
+  --delay-intro: calc(var(--hero-t0, 0ms) + var(--d, 0ms) + var(--i, 0) * var(--st, 83ms));
+}
+html[data-motion="full"] [data-reveal-intro="rise"] {
+  animation:
+    rdo-lift var(--f12) var(--ease-title) var(--delay-intro) both,
+    rdo-fade 200ms linear var(--delay-intro) both;
+}
+html[data-motion="full"] [data-reveal-intro="fade"] {
+  animation: rdo-fade var(--f12) linear var(--delay-intro) both;
+}
+html[data-motion="full"] [data-reveal-intro="draw"] {
+  animation: rdo-draw-x var(--f18) var(--ease-title) var(--delay-intro) both;
+}
+html[data-motion="full"] [data-reveal-intro="draw"].is-y {
+  animation-name: rdo-draw-y;
+}
+html[data-motion="full"] [data-reveal-intro="wipe"]:not(.split) {
+  animation: rdo-wipe var(--f24) var(--ease-cut) var(--delay-intro) both;
+}
+html[data-motion="full"] [data-reveal-intro="mask"] .wi {
+  animation: rdo-mask var(--f18) var(--ease-title) calc(var(--hero-t0) + var(--wd, 0ms)) both;
+}
+html[data-motion="full"] .split[data-reveal-intro="wipe"] .wipe-host {
+  animation:
+    rdo-wipe-p var(--f24) var(--ease-cut) calc(var(--hero-t0) + var(--sd, 0ms)) both,
+    rdo-gate-o var(--f24) linear calc(var(--hero-t0) + var(--sd, 0ms)) both;
+}
+html[data-motion="full"] .split[data-reveal-intro="wipe"] .wipe-clip {
+  clip-path: inset(0 calc((1 - var(--wipe)) * 100%) 0 0);
+}
+html[data-motion="full"] .split[data-reveal-intro="wipe"] .gate {
+  transform: translateX(calc(var(--wipe) * 100%));
+  opacity: var(--gate-o);
+}
+@keyframes rdo-wipe-p {
+  from {
+    --wipe: 0;
+  }
+  to {
+    --wipe: 1;
+  }
+}
+@keyframes rdo-gate-o {
+  0% {
+    --gate-o: 0;
+  }
+  4% {
+    --gate-o: 1;
+  }
+  96% {
+    --gate-o: 1;
+  }
+  100% {
+    --gate-o: 0;
+  }
+}
+html[data-motion="full"] .cta-drawn[data-reveal-intro] .cta-border rect {
+  animation: rdo-stroke var(--f18) var(--ease-title) calc(var(--hero-t0) + var(--d, 0ms)) both;
+}
+
+/* =====================================================================================
+   Loops pause offscreen (MotionBoot toggles [data-offscreen] on [data-loop])
+   ===================================================================================== */
+[data-loop][data-offscreen],
+[data-loop][data-offscreen] * {
+  animation-play-state: paused !important;
+}
+
+/* =====================================================================================
+   Reduced motion / MOTION off — safety net
+   ===================================================================================== */
+html[data-motion="reduce"] *,
+html[data-motion="reduce"] *::before,
+html[data-motion="reduce"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  transition-delay: 0s !important;
+  scroll-behavior: auto !important;
+}
+
+/* =====================================================================================
+   Forced colours
+   ===================================================================================== */
+@media (forced-colors: active) {
+  .cta-primary {
+    border: 1px solid ButtonText;
+  }
+  .hairline {
+    background: CanvasText;
+    box-shadow: none;
+  }
+  .cta-glow,
+  .cta-shine,
+  .cta-fill {
+    display: none;
+  }
+  .accent {
+    color: CanvasText;
+    background: none;
   }
 }

@@ -1,0 +1,428 @@
+/* =====================================================================================
+   HERO — the title card (W3)
+   Everything time-played here is CSS, gated by html[data-motion="full"] and timed from
+   --hero-t0, so it never waits for hydration. Without fx (no JS / reduced motion) none of these
+   animations exist: the clones and blade are display:none and the real text is static.
+   Timing vars (--bl-*) are written inline from lib/motion/tokens.ts HERO.
+   ===================================================================================== */
+
+@property --blade {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+@property --slice {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+/* the blade head's visibility: animated on .l1 next to --blade, so the head and the sweep it rides
+   share one clock (a separate opacity animation on .head can start a frame or more apart) */
+@property --head {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+/* hand-back 0 → 1 at the end of the heal: the real text takes over from the clones. It lives in .l1's
+   own animation list (with the sweep and heal) so it shares their start time. A 1ms constant-keyframe
+   animation after a long delay gets started in an earlier frame by Chromium (measured 117–317ms
+   early), which cut the spring heal short. */
+@property --hb {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+/* ---------------------------------------------------------------- layout */
+
+.hero {
+  /* the line-1 size, shared with the horizon maths below (and inherited by the field) */
+  --l1-size: min(clamp(2.6rem, 1.2rem + 6vw, 7.5rem), 10.4vw);
+  --slate-gap: 1.75rem;
+  /* CSS estimate of the horizon row (line 1's bottom edge), from the same terms as .content's
+     padding: slate (two 0.825rem mono lines + 0.5rem gap below md, one line at md+) + gap + line 1
+     (line-height .92). The poster sits on it until the field measures the real row into --hy, so
+     the SSR / no-JS / no-WebGL frame is already on the throughline and nothing jumps later. */
+  --hy0: calc(var(--header-h) + 10svh + 2.15rem + var(--slate-gap) + 0.92 * var(--l1-size));
+}
+@media (max-width: 348px) {
+  .hero {
+    /* the slate label wraps onto a second line here */
+    --hy0: calc(var(--header-h) + 10svh + 2.975rem + var(--slate-gap) + 0.92 * var(--l1-size));
+  }
+}
+@media (min-width: 768px) {
+  .hero {
+    --hy0: max(calc(var(--header-h) + 2.325rem + var(--slate-gap) + 0.92 * var(--l1-size)), 50svh);
+  }
+}
+
+.content {
+  padding-top: calc(var(--header-h) + 10svh);
+  padding-bottom: 4.5rem;
+}
+@media (min-width: 768px) {
+  .content {
+    /* line 1's bottom edge (= the horizon element) lands exactly at 50svh, the cold-open hairline row */
+    padding-top: max(
+      calc(var(--header-h) + 1.5rem),
+      calc(50svh - 0.92 * var(--l1-size) - 0.825rem - var(--slate-gap))
+    );
+    padding-bottom: 3.5rem;
+  }
+}
+
+.slateRow {
+  margin-bottom: var(--slate-gap);
+}
+/* <md: label on its own row (wrapping if it must), then the cut with the rule beside it */
+.slateRow .slate {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 0.75rem;
+  row-gap: 0.5rem;
+}
+.slateRow .slate > :global(.slate-label) {
+  grid-column: 1 / -1;
+}
+@media (min-width: 768px) {
+  .slateRow .slate {
+    display: flex;
+  }
+  .slateRow .slate > :global(.slate-label) {
+    grid-column: auto;
+  }
+}
+/* the slate rule draws on the blade's easing (spec: rule f18 cut) */
+html[data-motion="full"] .slateRow :global(.slate-rule) {
+  animation-timing-function: var(--ease-cut);
+}
+
+.title {
+  width: fit-content;
+  max-width: 100%;
+}
+
+.horizon {
+  display: block;
+  height: 0;
+}
+
+/* ---------------------------------------------------------------- line 1 + the blade */
+
+.l1 {
+  /* No nowrap: line 1 is sized to fit one line with ~15% to spare at every width, so it never wraps
+     normally, but user text-spacing overrides (WCAG 1.4.12) can wrap it instead of clipping it. */
+  display: block;
+  position: relative;
+  font-size: var(--l1-size, min(clamp(2.6rem, 1.2rem + 6vw, 7.5rem), 10.4vw));
+}
+.layer {
+  display: block;
+}
+.clone {
+  position: absolute;
+  inset: 0;
+  display: none;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* paper with a subtle vertical gradient (#F4F7FA → #C9D1DC) */
+.g {
+  background-image: linear-gradient(180deg, #f4f7fa 12%, #c9d1dc 88%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.wordHost {
+  position: relative;
+}
+/* clone / sliver glyphs: drawn from data-text so the raw HTML holds the words once */
+.ghost::before {
+  content: attr(data-text);
+}
+.sliver {
+  position: absolute;
+  inset: 0;
+  display: none;
+  pointer-events: none;
+  clip-path: inset(56% 0 calc(44% - 2px) 0);
+}
+
+.blade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 57%;
+  height: 1px;
+  display: none;
+  pointer-events: none;
+}
+.trail {
+  position: absolute;
+  inset: 0;
+  height: 1px;
+  width: 100%;
+  background: linear-gradient(90deg, rgba(34, 211, 238, 0.05), rgba(34, 211, 238, 0.85));
+  transform-origin: left center;
+  transform: scaleX(var(--blade));
+  opacity: var(--slice);
+}
+.head {
+  position: absolute;
+  inset: 0;
+  transform: translateX(calc(var(--blade) * 100%));
+  opacity: var(--head);
+}
+.head::before {
+  /* 96px hot gradient ending at the cutting point */
+  content: "";
+  position: absolute;
+  left: -96px;
+  top: -1px;
+  width: 96px;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, transparent, rgba(124, 244, 255, 0.55) 55%, #7cf4ff);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.75);
+}
+.head::after {
+  /* the edge itself: a short vertical glint */
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: -0.09em;
+  width: 2px;
+  height: 0.18em;
+  border-radius: 2px;
+  background: linear-gradient(180deg, transparent, #eaffff 50%, transparent);
+  box-shadow: 0 0 10px rgba(124, 244, 255, 0.9);
+}
+
+html[data-motion="full"] .clone,
+html[data-motion="full"] .blade,
+html[data-motion="full"] .sliver {
+  display: block;
+}
+
+html[data-motion="full"] .l1 {
+  animation:
+    blade-sweep var(--bl-dur) var(--ease-cut) calc(var(--hero-t0) + var(--bl-at)) both,
+    slice-open var(--f4) linear calc(var(--hero-t0) + var(--bl-at)) both,
+    slice-heal var(--f9) var(--spring-clap) calc(var(--hero-t0) + var(--bl-heal)) forwards,
+    blade-head calc(var(--bl-hold) + var(--bl-dur)) linear calc(var(--hero-t0) + var(--bl-at) - var(--bl-hold)) both,
+    hand-back 1ms linear calc(var(--hero-t0) + var(--bl-end)) forwards;
+}
+
+html[data-motion="full"] .real {
+  /* after the hand-back (--hb = 1) the left inset is 0: the real, selectable text is fully shown */
+  clip-path: inset(-0.3em -0.2em -0.3em calc(var(--blade) * (1 - var(--hb)) * 100%));
+}
+html[data-motion="full"] .top {
+  clip-path: inset(-0.3em calc((1 - var(--blade)) * 100%) 43% -0.2em);
+  transform: translate(calc(var(--slice) * -0.06em), calc(var(--slice) * -0.015em));
+  opacity: calc(1 - var(--hb));
+}
+html[data-motion="full"] .bot {
+  clip-path: inset(57% calc((1 - var(--blade)) * 100%) -0.3em -0.2em);
+  transform: translate(calc(var(--slice) * 0.03em), calc(var(--slice) * 0.01em));
+  opacity: calc(1 - var(--hb));
+}
+html[data-motion="full"] .sliver {
+  animation: sliver-fall var(--f12) var(--ease-exit) calc(var(--hero-t0) + var(--bl-at) + var(--sliver-at, 448ms)) both;
+}
+
+@keyframes blade-sweep {
+  from {
+    --blade: 0;
+  }
+  to {
+    --blade: 1;
+  }
+}
+@keyframes slice-open {
+  from {
+    --slice: 0;
+  }
+  to {
+    --slice: 1;
+  }
+}
+@keyframes slice-heal {
+  from {
+    --slice: 1;
+  }
+  to {
+    --slice: 0;
+  }
+}
+@keyframes hand-back {
+  from {
+    --hb: 0;
+  }
+  to {
+    --hb: 1;
+  }
+}
+@keyframes blade-head {
+  /* appears at the start and holds f2 (the page's one anticipation beat), then rides the sweep */
+  0% {
+    --head: 0;
+  }
+  8% {
+    --head: 1;
+  }
+  86% {
+    --head: 1;
+  }
+  100% {
+    --head: 0;
+  }
+}
+@keyframes sliver-fall {
+  to {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+}
+
+/* ---------------------------------------------------------------- line 2: "confidence." skews in its mask */
+
+html[data-motion="full"] .l2 :global(.accent) {
+  transform-origin: 0 100%;
+  animation: accent-skew var(--f24) var(--ease-title) calc(var(--hero-t0) + var(--l2-skew-at)) both;
+}
+@media (max-width: 507.98px) {
+  /* line 2 wraps: "confidence." starts its own line, so the wipe reaches it at once */
+  .l2 {
+    --l2-skew-at: var(--l2-skew-at-wrap);
+  }
+}
+@keyframes accent-skew {
+  from {
+    transform: skewX(-8deg);
+  }
+}
+
+/* ---------------------------------------------------------------- lede */
+
+/* Painted from the first frame (faint, 12px low) so it is an LCP candidate at first paint; at its
+   beat it develops to full tone and settles. Custom intro: the global rise/fade does not apply. */
+html[data-motion="full"] .lede {
+  animation:
+    lede-lift var(--f12) var(--ease-title) var(--delay-intro) both,
+    lede-develop var(--f9) linear var(--delay-intro) both;
+}
+@keyframes lede-lift {
+  from {
+    transform: translateY(12px);
+  }
+}
+@keyframes lede-develop {
+  from {
+    color: rgb(154 163 178 / 0.14); /* paper-dim, latent */
+  }
+}
+
+/* ---------------------------------------------------------------- CTAs */
+
+/* primary: the fill wipes up from the bottom, then one shine. Fill-mode backwards only, so no
+   clip-path is left behind to cut the focus ring or glow. */
+html[data-motion="full"] .ctas :global(.cta-primary) {
+  animation: cta-wipe-up var(--f9) var(--ease-cut) calc(var(--hero-t0) + var(--cta-at)) backwards;
+}
+html[data-motion="full"] .ctas :global(.cta-primary .cta-shine)::before {
+  animation: cta-shine var(--f18) var(--ease-title) calc(var(--hero-t0) + var(--cta-at) + var(--f9)) backwards;
+}
+/* secondary: its border strokes (CtaLink drawBorder); the label arrives with it */
+html[data-motion="full"] .ctas :global(.cta-secondary .cta-label) {
+  animation: cta-label-in var(--f12) var(--ease-title) calc(var(--hero-t0) + var(--cta-at) + var(--f3)) backwards;
+}
+@keyframes cta-wipe-up {
+  from {
+    clip-path: inset(100% -48px 0 -48px);
+  }
+  to {
+    clip-path: inset(-48px -48px -48px -48px);
+  }
+}
+@keyframes cta-shine {
+  from {
+    transform: translateX(-120%) skewX(-20deg);
+  }
+  to {
+    transform: translateX(420%) skewX(-20deg);
+  }
+}
+@keyframes cta-label-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@media (max-width: 639px) {
+  .ctas :global(.cta) {
+    width: 100%;
+  }
+  .ctas :global(.cta-secondary) {
+    white-space: normal;
+    text-align: center;
+    padding-block: 0.75rem;
+  }
+}
+
+/* ---------------------------------------------------------------- scroll cue */
+
+.cueTrack {
+  position: relative;
+  width: 1px;
+  height: 40px;
+  flex: none;
+  overflow: clip;
+  background: var(--line-strong);
+}
+.cueDash {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 6px;
+  background: var(--signal);
+  box-shadow: 0 0 6px rgba(34, 211, 238, 0.8);
+  transform: translateY(-6px);
+  display: none;
+}
+html[data-motion="full"] .cueDash {
+  display: block;
+  animation: cue-travel 1.6s var(--ease-drift) infinite;
+}
+@keyframes cue-travel {
+  from {
+    transform: translateY(-6px);
+  }
+  to {
+    transform: translateY(40px);
+  }
+}
+
+/* ---------------------------------------------------------------- scroll-out: never under still */
+html:not([data-motion="full"]) .scrollOut {
+  transform: none !important;
+  opacity: 1 !important;
+}
+
+@media (forced-colors: active) {
+  .g {
+    color: CanvasText;
+    background: none;
+  }
+  .blade,
+  .sliver,
+  .clone {
+    display: none !important;
+  }
+}

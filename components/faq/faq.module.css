@@ -1,0 +1,344 @@
+/* =====================================================================================
+   FAQ · the Commentary reel (W8) — the calmest section.
+   Native <details>. Answers arrive as subtitles (sentence by sentence) when opened; nothing
+   else moves unless touched, apart from the one-time entrance. SSR / no-JS / reduced motion
+   render the final frame. Only transform / opacity animate (plus the progressive-enhancement
+   block-size transition of ::details-content).
+   ===================================================================================== */
+
+/* ---------------------------------------------------------------- left column */
+/* the foundation slate rule (width:100%, flex 1 1 auto) squeezes the label into two lines at phone
+   width; basis 0 lets it take only the leftover space */
+.slateFit :global(.slate-rule) {
+  flex-basis: 0;
+}
+
+.ghostLink {
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+  color: var(--signal);
+  text-decoration: none;
+}
+/* resting underline (links are never colour-only) … */
+.ghostLink::before,
+.ghostLink::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.05em;
+  height: 1px;
+  pointer-events: none;
+}
+.ghostLink::before {
+  background: rgba(34, 211, 238, 0.32);
+}
+/* … and the ghost-CTA draw on hover/focus: in from the left, out to the right */
+.ghostLink::after {
+  background: var(--signal);
+  transform: scaleX(0);
+  transform-origin: right center;
+  transition: transform var(--f6) var(--ease-exit);
+}
+.ghostLink:focus-visible::after {
+  transform: none;
+  transform-origin: left center;
+  transition: transform var(--f9) var(--ease-cut);
+}
+@media (hover: hover) and (pointer: fine) {
+  .ghostLink:hover::after {
+    transform: none;
+    transform-origin: left center;
+    transition: transform var(--f9) var(--ease-cut);
+  }
+}
+
+/* ---------------------------------------------------------------- list + rows */
+.list {
+  position: relative;
+  --indent: 3rem; /* Q column + gap: the answer aligns with the question text */
+}
+@media (min-width: 768px) {
+  .list {
+    --indent: 11.25rem; /* + the decorative timecode column */
+  }
+}
+.topRule,
+.rowRule,
+.scan {
+  display: block;
+  height: 1px;
+  pointer-events: none;
+}
+.topRule {
+  background: var(--line);
+  transform-origin: left center;
+}
+.row {
+  position: relative;
+}
+.rowRule,
+.scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+.rowRule {
+  background: var(--line);
+  transform-origin: left center;
+}
+/* hover scan line: sweeps in from the left along the row's bottom border (f12 title), leaves to the right */
+.scan {
+  background: rgba(34, 211, 238, 0.6);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.35);
+  transform: scaleX(0);
+  transform-origin: right center;
+  transition: transform var(--f6) var(--ease-exit);
+}
+.row:has(> .item > .summary:focus-visible) .scan {
+  transform: none;
+  transform-origin: left center;
+  transition: transform var(--f12) var(--ease-title);
+}
+@media (hover: hover) and (pointer: fine) {
+  .row:has(> .item > .summary:hover) .scan {
+    transform: none;
+    transform-origin: left center;
+    transition: transform var(--f12) var(--ease-title);
+  }
+}
+
+/* ---------------------------------------------------------------- summary (the row) */
+.summary {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding-block: 1.5rem;
+  cursor: pointer;
+  list-style: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.summary::-webkit-details-marker {
+  display: none;
+}
+.summary::marker {
+  content: "";
+}
+@media (min-width: 768px) {
+  .summary {
+    gap: 1rem;
+  }
+}
+.qn,
+.tc {
+  flex: none;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-feature-settings: "tnum" 1, "zero" 1;
+  font-size: 0.6875rem;
+  line-height: 1.2;
+  letter-spacing: 0.16em;
+  font-weight: 500;
+  color: var(--paper-mute);
+  /* sit on the question's first-line baseline */
+  position: relative;
+  top: -0.1em;
+}
+.qn {
+  width: 2.25rem;
+  transition: color 150ms linear;
+}
+.tc {
+  display: none;
+  width: 7.25rem;
+  opacity: 0.5;
+  letter-spacing: 0.08em;
+}
+@media (min-width: 768px) {
+  .tc {
+    display: inline;
+  }
+}
+.question {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: clamp(1.125rem, 1rem + 0.4vw, 1.25rem);
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.015em;
+  color: var(--paper);
+  text-wrap: pretty;
+}
+/* "+" from two 1.5px strokes; rotates 45° into "×" when open */
+.plus {
+  position: relative;
+  flex: none;
+  align-self: center;
+  width: 14px;
+  height: 14px;
+  margin-left: 0.5rem;
+  color: var(--paper-mute);
+  transition:
+    transform var(--f9) var(--ease-title),
+    color 150ms linear;
+}
+.plus > span {
+  position: absolute;
+  left: 0;
+  top: calc(50% - 0.75px);
+  width: 100%;
+  height: 1.5px;
+  border-radius: 1px;
+  background: currentColor;
+}
+.plus > span + span {
+  transform: rotate(90deg);
+}
+.item[open] .plus {
+  transform: rotate(45deg);
+  color: var(--signal);
+}
+.item[open] .qn {
+  color: var(--signal);
+}
+@media (hover: hover) and (pointer: fine) {
+  .summary:hover .qn {
+    color: var(--signal);
+  }
+  .summary:hover .plus {
+    color: var(--paper);
+  }
+  .item[open] > .summary:hover .plus {
+    color: var(--signal);
+  }
+}
+
+/* ---------------------------------------------------------------- open: height (progressive) */
+.item::details-content {
+  block-size: 0;
+  overflow: clip;
+}
+.item[open]::details-content {
+  block-size: auto;
+}
+/* The global reduced-motion net only reaches *, ::before and ::after, so the height transition is
+   opted in explicitly: motion full, or no JS with no OS reduced-motion preference. */
+html[data-motion="full"] .item::details-content {
+  transition:
+    block-size var(--f12) var(--ease-ui),
+    content-visibility var(--f12) allow-discrete;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-motion]) .item::details-content {
+    transition:
+      block-size var(--f12) var(--ease-ui),
+      content-visibility var(--f12) allow-discrete;
+  }
+}
+
+/* ---------------------------------------------------------------- answer (subtitles) */
+.answerWrap {
+  position: relative;
+  margin-left: calc(var(--indent) - 1.25rem);
+  padding: 0.25rem 2rem 2rem 1.25rem;
+}
+.rule {
+  position: absolute;
+  left: 0;
+  top: 0.55rem;
+  bottom: 2.3rem;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--signal);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.35);
+  transform-origin: center top;
+}
+.answer {
+  max-width: 60ch;
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--paper-dim);
+  text-wrap: pretty;
+}
+/* inline: the paragraph keeps its natural flow */
+.sent {
+  display: inline;
+}
+.wd {
+  display: inline-block;
+}
+.inlineLink {
+  color: var(--signal);
+  text-decoration: underline;
+  text-decoration-color: rgba(34, 211, 238, 0.4);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: text-decoration-color 150ms linear;
+}
+.inlineLink:hover {
+  text-decoration-color: var(--signal);
+}
+
+html[data-motion="full"] .item[open] .rule {
+  animation: rule-draw var(--f12) var(--ease-title) both;
+}
+html[data-motion="full"] .item[open] .wd {
+  animation:
+    sub-lift var(--f12) var(--ease-title) calc(var(--sent, 0) * var(--f3)) both,
+    sub-fade calc(var(--f12) * 0.4) linear calc(var(--sent, 0) * var(--f3)) both;
+}
+@keyframes rule-draw {
+  from {
+    transform: scaleY(0);
+  }
+}
+@keyframes sub-lift {
+  from {
+    transform: translateY(0.6em);
+  }
+}
+@keyframes sub-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ---------------------------------------------------------------- one-time entrance */
+html[data-ready][data-motion="full"] .list:not([data-inview]) .topRule,
+html[data-ready][data-motion="full"] .list:not([data-inview]) .rowRule {
+  transform: scaleX(0);
+}
+html[data-ready][data-motion="full"] .list:not([data-inview]) .summary {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.list[data-inview="1"] .topRule {
+  transition: transform var(--f18) var(--ease-cut);
+}
+.list[data-inview="1"] .rowRule {
+  transition: transform var(--f18) var(--ease-cut) calc(var(--f3) * (var(--row, 0) + 1));
+}
+.list[data-inview="1"] .summary {
+  transition:
+    transform var(--f12) var(--ease-title) calc(var(--f3) * var(--row, 0) + var(--f2)),
+    opacity calc(var(--f12) * 0.4) linear calc(var(--f3) * var(--row, 0) + var(--f2));
+}
+
+/* ---------------------------------------------------------------- forced colours */
+@media (forced-colors: active) {
+  .topRule,
+  .rowRule,
+  .plus > span {
+    forced-color-adjust: none;
+    background: CanvasText;
+  }
+  .rule,
+  .scan,
+  .ghostLink::after {
+    forced-color-adjust: none;
+    background: Highlight;
+    box-shadow: none;
+  }
+}
