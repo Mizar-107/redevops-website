@@ -16,13 +16,13 @@ const outcomes: { icon: LucideIcon; title: string; description: string }[] = [
   {
     icon: Gauge,
     title: "Leaner cloud bills",
-    description: "Find idle and oversized resources, tidy storage tiers, and align commitments with real usage patterns.",
+    description: "We find idle and oversized resources, tidy storage tiers, and match commitments to real usage.",
   },
   {
     icon: Layers,
     title: "Clearer reliability posture",
     description:
-      "Meaningful alerts, actionable runbooks, and a shared language for incidents — fewer pages that go nowhere.",
+      "Alerts that mean something, runbooks people actually use, and a shared language for incidents. Fewer pages that go nowhere.",
   },
   {
     icon: Rocket,
@@ -33,7 +33,7 @@ const outcomes: { icon: LucideIcon; title: string; description: string }[] = [
     icon: Workflow,
     title: "Knowledge left behind",
     description:
-      "Docs, diagrams, and pairing so improvements survive after the engagement — not a black box of magic scripts.",
+      "Docs, diagrams, and pairing, so the improvements outlast the engagement. No black box of magic scripts.",
   },
 ]
 
@@ -41,12 +41,12 @@ const exampleFocus = [
   {
     scene: "A",
     title: "Spend & capacity review",
-    body: "Map the top cost drivers, flag obvious waste, and hand you a prioritized fix list your team can execute or we can implement together.",
+    body: "We map your top cost drivers, flag the obvious waste, and hand over a prioritized fix list. Your team runs it, or we implement it together.",
   },
   {
     scene: "B",
     title: "Delivery & observability tune-up",
-    body: "Tighten CI stages, stabilize environments, and replace noisy alerts with signals that match how you actually operate.",
+    body: "We tighten CI stages, stabilize environments, and replace noisy alerts with signals that match how you actually operate.",
   },
 ]
 
@@ -56,7 +56,7 @@ const H2_WORDS = H2.split(/\s+/).length
 const RACK_MS = Math.round((H2_WORDS - 1) * staggerFor(H2_WORDS, 83, 500) + fms(18) + 250)
 
 /**
- * REEL 03 · OUTCOMES. Density 1 (the still notice card), then 5 (the scope, lower-thirds, slates).
+ * 02 / OUTCOMES. Density 1 (the still notice card), then 5 (the scope, lower-thirds, slates).
  * Server component; the Telemetry Scope and the scrambles are the only client islands.
  */
 export function ResultsSection() {
@@ -103,9 +103,9 @@ export function ResultsSection() {
             data-reveal="custom"
             className={cn(s.foot, "mt-6 text-center font-mono text-[0.75rem] leading-[1.7] text-paper-dim")}
           >
-            Results depend on your starting point, architecture, and how quickly recommendations are adopted. We set
-            expectations in the first conversation —{" "}
-            <ScrambleText text="no fabricated case-study numbers." className={s.footClause} />
+            Results depend on your starting point, your architecture, and how quickly changes are adopted. We set
+            expectations on the first call, and we never publish{" "}
+            <ScrambleText text="made-up case-study numbers." className={s.footClause} />
             <span aria-hidden="true" className={s.caret}>
               ▍
             </span>

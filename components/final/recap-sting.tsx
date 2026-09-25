@@ -135,17 +135,17 @@ function DeliveryMotif() {
 /* 04 PARTNERSHIP: two braided tracks merge into one line; the docs they leave stay pinned */
 const BRAID = (() => {
   const team: Pt[] = []
-  const recep: Pt[] = []
+  const ours: Pt[] = []
   for (let i = 0; i <= 76; i++) {
     const xn = i / 76
     const x = 12 + xn * 156
     const m = smoothstep(0.06, 0.56, xn)
     const sep = 14 * (1 - m)
     const braid = 11 * Math.sin(2 * Math.PI * 2 * xn) * (1 - m)
-    recep.push({ x, y: MID + sep / 2 + braid / 2 })
+    ours.push({ x, y: MID + sep / 2 + braid / 2 })
     if (xn <= 0.62) team.push({ x, y: MID - sep / 2 - braid / 2 })
   }
-  return { team: poly(team), recep: poly(recep) }
+  return { team: poly(team), ours: poly(ours) }
 })()
 const DOCS = [100, 124, 148]
 
@@ -153,7 +153,7 @@ function PartnershipMotif() {
   return (
     <svg viewBox={`0 0 ${W} 112`} fill="none">
       <path d={BRAID.team} stroke="#9AA3B2" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round" />
-      <Trace d={BRAID.recep} />
+      <Trace d={BRAID.ours} />
       {DOCS.map((x) => (
         <g key={x}>
           <path
@@ -179,7 +179,7 @@ const MOTIFS: readonly Motif[] = [
   { key: "partnership", label: "PARTNERSHIP", Art: PartnershipMotif },
 ]
 const idx = (k: number) => String(k + 1).padStart(2, "0")
-const CUT_TO = `CUT TO · ${section("final").cut.toUpperCase()}`
+const CUT_TO = `NEXT · ${section("final").cut.toUpperCase()}`
 /** fraction of the f18 flight after which the underline takes over from the flyer */
 const LAND_AT = 0.8
 /** px the monitor's line must sit below the fixed header (--header-h) for the flight to launch */
@@ -419,9 +419,9 @@ export function RecapSting({ sentinelRef, targetRef, onLand, className }: RecapS
           <ViewfinderFrame always />
         </div>
         <p className={s.stingMeta}>
-          <span>RECAP</span>
+          <span>SUMMARY</span>
           <span className={s.labels}>
-            <span className={cn(s.lab, s.labStandby)}>STANDBY</span>
+            <span className={cn(s.lab, s.labStandby)}>READY</span>
             {MOTIFS.map(({ key, label }, k) => (
               <span
                 key={key}

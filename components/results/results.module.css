@@ -686,42 +686,22 @@ html[data-ready][data-motion="full"] .lt:not([data-inview]) .ltDesc {
     --k: 1;
   }
 }
-.clapper {
+/* Top-edge signal: the throughline draws across the card's top edge (f12, cut), then the card border
+   flashes once. Replaces a hinged stick; nothing rotates. */
+.topbar {
   position: absolute;
   top: -1px;
-  left: -1px;
-  right: -1px;
-  height: 14px;
+  left: 12px;
+  right: 12px;
+  height: 2px;
   pointer-events: none;
 }
-.stick {
+.bar {
   position: absolute;
   inset: 0;
-  border-radius: 12px 12px 0 0;
-  background: repeating-linear-gradient(45deg, var(--paper) 0 10px, var(--ink-950) 10px 20px);
-  opacity: 0.85;
-  transform-origin: 0 100%;
-  /* the waiting angle and the wind-up (the anticipation) */
-  --open: -10deg;
-  --wind: -14deg;
-}
-/* Single column: the card above sits only the grid gap away, so the stick may only rise into that
-   gap, never across the previous card. Angles are solved from the card width so the free end lifts
-   a fixed 26px (34px on the wind-up) at any width; the clap keeps its full travel and spring. */
-@media (max-width: 767px) {
-  .stick {
-    --open: -2deg;
-    --wind: -3deg;
-  }
-  @supports (transform: rotate(atan2(1px, 1px))) {
-    .clapper {
-      container-type: inline-size;
-    }
-    .stick {
-      --open: atan2(-26px, 100cqw);
-      --wind: atan2(-34px, 100cqw);
-    }
-  }
+  background: var(--signal);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.45);
+  transform-origin: 0 50%;
 }
 .flash {
   position: absolute;
@@ -732,8 +712,8 @@ html[data-ready][data-motion="full"] .lt:not([data-inview]) .ltDesc {
   opacity: 0;
   pointer-events: none;
 }
-html[data-ready][data-motion="full"] .slated:not([data-inview]) .stick {
-  transform: rotate(var(--open));
+html[data-ready][data-motion="full"] .slated:not([data-inview]) .bar {
+  transform: scaleX(0);
 }
 html[data-ready][data-motion="full"] .slated:not([data-inview]) :global(.wi) {
   transform: translateY(110%);
@@ -744,17 +724,12 @@ html[data-ready][data-motion="full"] .slated:not([data-inview]) .slatedBody {
 html[data-ready][data-motion="full"] .slated[data-inview] :global(.wi) {
   transform: none;
 }
-/* Two segments, so each carries its token easing through the shorthand (var() does not resolve in a
-   keyframe's animation-timing-function; it silently falls back to `ease`). The clap fills forwards
-   only, so it cannot override the wind-up while it waits. */
-.slated[data-inview="1"] .stick {
-  animation:
-    slate-windup var(--f2) var(--ease-title) var(--t0) both,
-    slate-clap var(--f9) var(--spring-clap) calc(var(--t0) + var(--f2)) forwards;
+.slated[data-inview="1"] .bar {
+  animation: bar-draw var(--f12) var(--ease-cut) var(--t0) both;
 }
 .slated[data-inview="1"] .flash {
-  /* impact: the spring first reaches 0° about f3 into the clap */
-  animation: slate-flash var(--f2) linear calc(var(--t0) + var(--f2) + var(--f3));
+  /* one flash as the line lands */
+  animation: slate-flash var(--f2) linear calc(var(--t0) + var(--f12));
 }
 html[data-ready][data-motion="full"] .slated[data-inview="1"] :global(.wi) {
   transition: transform var(--f18) var(--ease-title) calc(var(--t0) + var(--f6) + var(--wd, 0ms));
@@ -762,20 +737,9 @@ html[data-ready][data-motion="full"] .slated[data-inview="1"] :global(.wi) {
 .slated[data-inview="1"] .slatedBody {
   transition: opacity var(--f12) linear calc(var(--t0) + var(--f12));
 }
-@keyframes slate-windup {
+@keyframes bar-draw {
   from {
-    transform: rotate(var(--open));
-  }
-  to {
-    transform: rotate(var(--wind));
-  }
-}
-@keyframes slate-clap {
-  from {
-    transform: rotate(var(--wind));
-  }
-  to {
-    transform: rotate(0deg);
+    transform: scaleX(0);
   }
 }
 @keyframes slate-flash {

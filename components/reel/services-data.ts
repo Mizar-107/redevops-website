@@ -1,7 +1,7 @@
 import { DollarSign, ShieldCheck, Users, Zap, type LucideIcon } from "lucide-react"
 import type { SceneId } from "@/lib/reel/scene"
 
-/** Source of truth for Services copy (verbatim) + mono tag lines built only from the copy. */
+/** Source of truth for Services copy + mono tag lines built only from the copy. */
 export const SERVICES: readonly {
   id: SceneId
   icon: LucideIcon
@@ -14,7 +14,7 @@ export const SERVICES: readonly {
     icon: DollarSign,
     title: "Cloud cost optimization",
     description:
-      "Deep spend audits, rightsizing, storage tiering, and commitment planning — so you stop paying for idle capacity and mistimed reservations.",
+      "Spend audits, rightsizing, storage tiering, and commitment planning, so you stop paying for idle capacity and reservations that don't match your usage.",
     tags: ["spend audit", "rightsizing", "storage tiering", "commitment planning"],
   },
   {
@@ -22,7 +22,7 @@ export const SERVICES: readonly {
     icon: ShieldCheck,
     title: "Infrastructure reliability",
     description:
-      "SRE-minded monitoring, alerting, runbooks, and incident practice that reduce surprise outages and make recovery repeatable.",
+      "SRE-grade monitoring, alerting, runbooks, and incident practice. Fewer surprise outages, and recoveries your team can repeat.",
     tags: ["monitoring", "alerting", "runbooks", "incident practice"],
   },
   {
@@ -30,7 +30,7 @@ export const SERVICES: readonly {
     icon: Zap,
     title: "CI/CD & delivery speed",
     description:
-      "Faster, safer pipelines: fewer flaky stages, clearer environments, and deployments your team can trust on a regular cadence.",
+      "Faster, safer pipelines: fewer flaky stages, cleaner environments, and deploys your team trusts on a steady cadence.",
     tags: ["flaky stages", "clear environments", "trusted cadence"],
   },
   {
@@ -38,7 +38,7 @@ export const SERVICES: readonly {
     icon: Users,
     title: "Embedded DevOps partnership",
     description:
-      "Augment your engineers or fill an interim DevOps gap — pair on real systems, document decisions, and leave the team stronger.",
+      "Extra hands for your engineers, or cover for an interim DevOps gap. We pair on real systems, document the decisions, and leave your team stronger.",
     tags: ["pair on real systems", "document decisions", "leave the team stronger"],
   },
 ]

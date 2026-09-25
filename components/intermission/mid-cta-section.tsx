@@ -9,14 +9,14 @@ import { CALENDLY_URL, CALL_EXPECTATIONS, CONTACT_MAILTO, PRIMARY_CTA_LABEL } fr
 import { Dial } from "./dial"
 import s from "./intermission.module.css"
 
-const MARQUEE = "INTERMISSION · "
+const MARQUEE = "FREE CONSULT · "
 const COPIES = [0, 1, 2, 3] as const
 
 /**
  * Intermission: the first pressure-free ask. Server component; every motion is CSS keyed off the
  * reveal system, so the section ships no JS of its own (CtaLink / ScrambleText are the only islands).
  *
- * Behind the card, an outline "INTERMISSION ·" marquee drifts left (CSS loop, paused offscreen via
+ * Behind the card, an outline "FREE CONSULT ·" marquee drifts left (CSS loop, paused offscreen via
  * data-loop, static under still:). In the card: the slate eyebrow scrambles and rules, the H2 rises
  * word by word, the shot list ticks, the 30-minute dial sweeps once and parks its hand at 12 as a
  * playhead, and the secondary CTA strokes its border. The primary CTA never moves: it is the anchor.
@@ -47,7 +47,7 @@ export function MidCtaSection() {
           <div className="min-w-0">
             <Slate
               section="intermission"
-              label="INTERMISSION · FREE 30-MINUTE CONSULT"
+              label="FREE 30-MINUTE CONSULT"
               cut={null}
               className={s.eyebrow}
             />
@@ -55,9 +55,8 @@ export function MidCtaSection() {
               id="mid-cta-heading"
               className="mt-6 max-w-[18ch] text-balance text-[clamp(2rem,1.3rem+2.4vw,3.25rem)] font-[640] leading-[1.02] tracking-[-0.035em] text-paper"
             >
-              {/* non-breaking spaces keep "right fit —" together (SplitText splits on ASCII spaces only):
-                  on phones the heading breaks on the phrase, and no line starts with the dash */}
-              <SplitText text={"See if ReDevOps is the right\u00A0fit\u00A0— in one call"} delay={fms(3)} />
+              {/* a non-breaking space keeps "one call" together (SplitText splits on ASCII spaces only) */}
+              <SplitText text={"Find out if we're the right fit in one\u00A0call"} delay={fms(3)} />
             </h2>
             <ShotList items={CALL_EXPECTATIONS} className="mt-8 max-w-[52ch]" />
           </div>
@@ -69,7 +68,7 @@ export function MidCtaSection() {
                 {PRIMARY_CTA_LABEL}
               </CtaLink>
               <CtaLink href={CONTACT_MAILTO} variant="secondary" size="lg" drawBorder delay={fms(6)} className="w-full">
-                Prefer email? Write Recep
+                Prefer email? Write to us
               </CtaLink>
             </div>
           </div>

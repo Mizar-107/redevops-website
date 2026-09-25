@@ -412,7 +412,7 @@ export function ReelStage({ scenes = SCENES }: { scenes?: readonly SceneModule[]
                     <TransitionPanels ref={transRef} />
                   </div>
                   <span className={cn(styles.monLabel, "font-mono text-hud uppercase")} aria-hidden="true">
-                    <span>MON ·</span>
+                    <span>SIGNAL ·</span>
                     <b>
                       <ScrambleText text={scene.label} trigger="change" />
                     </b>

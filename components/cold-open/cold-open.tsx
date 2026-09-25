@@ -4,15 +4,6 @@ import { COLD_OPEN, DUR_MS } from "@/lib/motion/tokens"
 import { Hairline } from "@/components/motion/hairline"
 import styles from "./cold-open.module.css"
 
-/** The film-leader slate (spec copy), one entry per line; "v" segments are the values (a tone brighter). */
-type Seg = readonly [text: string, tone: "k" | "v"]
-const SLATE: readonly (readonly Seg[])[] = [
-  [["PROD.", "k"], ["REDEVOPS", "v"]],
-  [["DIR.", "k"], ["RECEP", "v"]],
-  [["SC", "k"], ["01", "v"], ["·", "k"], ["TK", "k"], ["01", "v"]],
-  [["24", "v"], ["FPS", "k"]],
-]
-
 /**
  * Every beat of the overlay is timed from lib/motion/tokens.ts COLD_OPEN (ms from first paint), written
  * here as CSS custom properties so the stylesheet never carries its own copy of the timeline.
@@ -32,9 +23,9 @@ const TIMELINE = {
 } as CSSProperties
 
 /**
- * THROUGHLINE cold open. A CSS-only, self-dismissing title overlay (no JS in this component):
- * slate type-in → the hairline draws from the centre → a blip runs the line → the black halves part
- * to a 2.39:1 letterbox (the hairline row is the hero horizon: match cut) → hold → bars exit.
+ * Intro overlay. CSS-only and self-dismissing (no JS in this component): the hairline draws from the
+ * centre → a pulse runs the line → the dark halves part around it (the hairline row is the hero
+ * horizon, so the line hands straight over to the hero) → brief hold → halves exit.
  *
  * It is display:none unless the pre-paint boot script set html[data-intro="play" | "skip"], so
  * visitors without JS, with reduced motion, on a repeat visit in the session or on a hash deep link
@@ -64,18 +55,6 @@ export function ColdOpen() {
             <span className={styles.blipTrail} />
             <span className={styles.blipHead} />
           </span>
-          <p className={cn(styles.slate, "font-mono")}>
-            {SLATE.map((line, i) => (
-              <span key={i} className={styles.slateLine}>
-                {line.map(([text, tone], j) => (
-                  <span key={j} className={tone === "v" ? styles.slateVal : undefined}>
-                    {j > 0 ? " " : ""}
-                    {text}
-                  </span>
-                ))}
-              </span>
-            ))}
-          </p>
         </div>
       </div>
 

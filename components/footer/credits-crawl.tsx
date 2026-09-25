@@ -7,15 +7,14 @@ import { clamp } from "@/lib/motion/math"
 import { useScrub } from "@/hooks/use-scrub"
 import s from "@/components/final/final.module.css"
 
-/** Only real facts. Multi-name credits roll one name per line, like a real crawl. */
+/** Only real facts: what we do and what we work with, one item per line. */
 const CREDITS = [
-  { role: "Directed & engineered by", names: ["Recep"] },
   {
-    role: "Practice",
+    role: "What we do",
     names: ["Cloud cost optimization", "Infrastructure reliability", "CI/CD & delivery", "Embedded DevOps partnership"],
   },
   { role: "Clouds", names: ["AWS", "Google Cloud", "Azure"] },
-  { role: "Also featuring", names: ["Kubernetes", "containers", "CI platforms", "observability", "runbooks"] },
+  { role: "Also working with", names: ["Kubernetes", "containers", "CI platforms", "observability", "runbooks"] },
 ] as const
 
 /** minimum extra speed of the column over the page: 0.35 → the credits roll at ≥ 1.35× scroll */
@@ -26,14 +25,13 @@ const END_AT = 0.8
 const END_VIEW = 0.55
 
 /**
- * The end-credits crawl: classic two-column credits (roles right, names left, around a centre gutter;
+ * The at-a-glance roll: two columns (roles right, names left, around a centre gutter;
  * stacked and centred on phones) rolling through a masked window (60svh; 70svh on phones), then the
  * honesty card (static, after the roll). Scroll-driven only, no autoplay. p = the window's own passage
  * (["start end", "end 55%"]); the column's translateY = end + travel · (1 − p): it enters with the first
  * credit at the band's lower edge, rolls at ≥ 1.35× the page (≈1.5× on typical viewports) and settles
  * with its last row at 80% of the window while the window is still well on screen. The range is
- * measured (window + column heights) instead of fixed percentages so that every row — the director
- * credit first — crosses the unmasked band while it can actually be read, on any viewport.
+ * measured (window + column heights) instead of fixed percentages so that every row crosses the unmasked band while it can actually be read, on any viewport.
  * Written imperatively (framer frame loop → style); zero React renders while scrolling.
  * still (no JS / reduced / MOTION off): natural position, no mask.
  */
@@ -123,7 +121,7 @@ export function CreditsCrawl({ className }: { className?: string }) {
       </div>
       <div className="shell">
         <p className="mx-auto mt-10 max-w-md rounded-[10px] border border-line-strong bg-ink-900/60 px-6 py-5 text-center font-mono text-[0.8125rem] leading-relaxed text-paper-dim">
-          No fake logos were used in the making of this site. No metrics were invented.
+          Everything here describes real work: no client logos, no made-up testimonials, no invented numbers.
         </p>
       </div>
     </div>

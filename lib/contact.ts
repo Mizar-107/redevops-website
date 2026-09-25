@@ -9,10 +9,10 @@ export const PRIMARY_CTA_LABEL_SHORT = "Book free consult"
 
 export const CONTACT_MAILTO = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(
   "ReDevOps consultation",
-)}&body=${encodeURIComponent("Hi Recep,\n\nI'd like to talk about ...")}`
+)}&body=${encodeURIComponent("Hi ReDevOps team,\n\nWe'd like to talk about ...")}`
 
 export const CALL_EXPECTATIONS = [
-  "Clarify the biggest cost, reliability, or delivery pain",
-  "Leave with a concrete next step — whether we work together or not",
-  "No pitch deck; 30 minutes, focused on your stack",
+  "Pinpoint your biggest cost, reliability, or delivery pain",
+  "Leave with a concrete next step, whether we work together or not",
+  "No pitch deck. 30 minutes, focused on your stack.",
 ] as const

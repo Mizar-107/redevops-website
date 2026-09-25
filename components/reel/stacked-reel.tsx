@@ -106,7 +106,7 @@ function StackedCard({ service, scene, index }: { service: Service; scene: Scene
 
         <div className="min-w-0 flex-1">
           <p className="mb-2 font-mono text-hud uppercase text-paper-mute" aria-hidden="true">
-            <span className="still:hidden">MON · <span className="text-paper-dim">{scene.label}</span></span>
+            <span className="still:hidden">SIGNAL · <span className="text-paper-dim">{scene.label}</span></span>
             <span className="hidden still:inline">After</span>
           </p>
           <div

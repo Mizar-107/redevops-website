@@ -12,27 +12,27 @@ const faqs = [
   {
     question: "How fast will we see improvements?",
     answer:
-      "It depends on your starting point. Many teams unlock quick wins (obvious idle spend, noisy alerts, brittle pipeline stages) within the first few weeks. Deeper reliability and delivery work usually lands over a short engagement with clear milestones — we set expectations on the first call.",
+      "It depends on where you start. Many teams see quick wins within the first few weeks: obvious idle spend, noisy alerts, brittle pipeline stages. Deeper reliability and delivery work lands over a short engagement with clear milestones. We set expectations on the first call.",
   },
   {
     question: "Will this disrupt our development workflow?",
     answer:
-      "No. We design changes to run alongside your roadmap: small, reviewable steps, clear communication, and integration with the tools you already use. Product shipping stays the priority.",
+      "No. Changes ship alongside your roadmap in small, reviewable steps, with clear communication and the tools you already use. Product work stays the priority.",
   },
   {
     question: "What if we already have a DevOps or platform engineer?",
     answer:
-      "Even better. ReDevOps works as a specialist partner — cost deep-dives, SRE practices, CI/CD hardening — so your existing engineer can stay focused on product-facing work while we tackle the thornier infrastructure problems together.",
+      "Even better. We work as a specialist partner on cost deep-dives, SRE practices, and CI/CD hardening, so your engineer can stay focused on product work while we tackle the thornier infrastructure problems together.",
   },
   {
     question: "Which clouds and stacks do you support?",
     answer:
-      "AWS, Google Cloud, and Azure are all in scope, along with common Kubernetes, container, and CI platforms. The principles of lean spend and reliable delivery transfer; we adapt to your stack instead of forcing a rewrite.",
+      "AWS, Google Cloud, and Azure, plus the common Kubernetes, container, and CI platforms. Lean spend and reliable delivery work the same everywhere, so we adapt to your stack instead of forcing a rewrite.",
   },
   {
     question: "How do we get started?",
     answer:
-      "Book a free 30-minute consultation on Calendly, or email eksiertu@gmail.com with a short note about your stack and what hurts most (cost, reliability, or delivery). We will reply with next steps.",
+      "Book a free 30-minute consultation on Calendly, or email eksiertu@gmail.com with a short note about your stack and what hurts most: cost, reliability, or delivery. We'll reply with next steps.",
   },
 ]
 
@@ -99,7 +99,7 @@ function Answer({ text }: { text: string }) {
 }
 
 /**
- * FAQ: the Commentary reel, the calmest section. Server component; native <details name="faq">
+ * FAQ: the calmest section. Server component; native <details name="faq">
  * (exclusive open where supported, independent elsewhere), so it works without JS and every answer
  * is in the SSR HTML. Nothing moves unless touched, apart from the one-time entrance.
  * The section closes on a full-bleed hairline seam: the line the final horizon field unfolds from.
@@ -116,7 +116,7 @@ export function FaqSection() {
           <Reveal as="p" delay={fms(9)} className="mt-6 max-w-[34ch] text-lede text-paper-dim">
             Straight answers. Still unsure?{" "}
             <a href={CONTACT_MAILTO} className={s.ghostLink}>
-              Email Recep
+              Email us
             </a>
             .
           </Reveal>
@@ -126,16 +126,12 @@ export function FaqSection() {
           <span aria-hidden="true" className={s.topRule} />
           {faqs.map((f, i) => {
             const n = idx(i)
-            const tc = `00:${n}:00:00`
             return (
               <div key={f.question} className={s.row} style={{ "--row": i } as CSSProperties}>
                 <details name="faq" className={cn("group", s.item)}>
                   <summary className={s.summary}>
                     <span aria-hidden="true" className={s.qn}>
                       Q{n}
-                    </span>
-                    <span aria-hidden="true" className={s.tc}>
-                      {tc}
                     </span>
                     <span className={s.question}>{f.question}</span>
                     <span aria-hidden="true" className={s.plus}>

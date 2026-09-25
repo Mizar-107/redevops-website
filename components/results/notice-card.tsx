@@ -3,9 +3,9 @@ import { cn } from "@/lib/utils"
 import { Hairline } from "@/components/motion/hairline"
 import s from "./results.module.css"
 
-const LABEL = "A NOTE BEFORE THE FEATURE"
+const LABEL = "HOW WE MEASURE SUCCESS"
 const TEXT =
-  "We measure success by operational clarity and sustainable improvements — not vanity dashboards or inflated percentages."
+  "Operational clarity and improvements that last. Not vanity dashboards or inflated percentages."
 
 /** ms offsets inside the notice (from its reveal). Film frames: f3 = 125, f9 = 375, f18 = 750, f21 = 875. */
 const AT = { rule1: 0, rule2: 125, label: 375, text: 500, rule3: 750, rule4: 875 } as const

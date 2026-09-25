@@ -7,7 +7,7 @@ import { clamp } from "@/lib/motion/math"
 import { useScrub } from "@/hooks/use-scrub"
 import { useReducedMotionSafe } from "@/hooks/use-motion-pref"
 import { Reveal } from "@/components/motion/reveal"
-import { END_LOG, STEPS, clipLabel, tcAt, type ProcessStep } from "./process-data"
+import { END_LOG, STEPS, clipLabel, planBar, type ProcessStep } from "./process-data"
 import styles from "./process.module.css"
 
 /** Where this clip sits in the whole sequence: its segment lit, the other two ghosted. */
@@ -132,7 +132,7 @@ export function StackedEdit() {
               <div className={styles.cardHead}>
                 <p className={styles.cardClip}>{clipLabel(s)}</p>
                 <p className={styles.cardTc} aria-hidden="true">
-                  <span>IN</span> {tcAt(s.clip[0])} <span>OUT</span> {tcAt(s.clip[1])}
+                  {planBar(s.clip[1])}
                 </p>
               </div>
               <div className={styles.cardBody}>

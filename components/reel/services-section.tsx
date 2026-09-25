@@ -30,7 +30,7 @@ export function ServicesSection({ scenes }: { scenes?: readonly SceneModule[] } 
           delay={DUR_MS.f6}
           className="max-w-[60ch] text-lede text-paper-dim text-pretty lg:col-span-5 lg:self-end lg:justify-self-end"
         >
-          Focused engagements for teams that need clearer spend, steadier systems, and smoother shipping — not another
+          Focused engagements for teams that want clearer spend, steadier systems, and smoother releases. Not another
           generic transformation deck.
         </Reveal>
       </div>

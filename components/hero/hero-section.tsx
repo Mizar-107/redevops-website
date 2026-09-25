@@ -8,8 +8,7 @@ import { ScrambleText } from "@/components/motion/scramble-text"
 import { SplitText } from "@/components/motion/split-text"
 import { Reveal } from "@/components/motion/reveal"
 import { CtaLink } from "@/components/motion/cta-link"
-import { CALENDLY_URL, CONTACT_EMAIL, CONTACT_MAILTO, PRIMARY_CTA_LABEL } from "@/lib/contact"
-import { section } from "@/lib/sections"
+import { CALENDLY_URL, CONTACT_MAILTO, PRIMARY_CTA_LABEL } from "@/lib/contact"
 import { DUR_MS, HERO, fms, staggerFor } from "@/lib/motion/tokens"
 import { introRemaining } from "@/lib/motion/pref"
 import { clamp, ease } from "@/lib/motion/math"
@@ -17,8 +16,7 @@ import { useScrub } from "@/hooks/use-scrub"
 import { SignalField } from "./signal-field"
 import s from "./hero.module.css"
 
-const HOME = section("home")
-const SLATE_LABEL = `REEL ${HOME.reel} · DEVOPS CONSULTING BY RECEP`
+const SLATE_LABEL = "DEVOPS CONSULTING"
 const SLATE_CUT = "Hands-on, not slideware"
 
 const L1_TEXT = "Cut cloud waste."
@@ -170,13 +168,13 @@ export function HeroSection() {
         style={{ ...TIMING, opacity: fade }}
       >
         <div className={s.slateRow}>
-          {/* One slate, the system's format: signal label, dim "— cut" and the rule. Below md the
+          {/* One slate, the system's format: signal label, dim "· cut" and the rule. Below md the
               cut drops to a second mono line with the rule beside it (s.slate grid); the label wraps
               rather than clipping on ≤340px screens. */}
           <p className={cn("slate", s.slate)}>
             <ScrambleText text={SLATE_LABEL} trigger="intro" className="slate-label" />
             <Reveal as="span" mode="fade" trigger="intro" delay={DUR_MS.f6} className="slate-cut">
-              <span className="hidden md:inline">— </span>
+              <span className="hidden md:inline">· </span>
               {SLATE_CUT}
             </Reveal>
             <Hairline draw="start" trigger="intro" delay={DUR_MS.f6} className="slate-rule" />
@@ -228,8 +226,8 @@ export function HeroSection() {
             delay={HERO.lede}
             className={cn(s.lede, "mt-7 max-w-[60ch] text-lede text-paper-dim text-pretty md:mt-8")}
           >
-            ReDevOps partners with growing product teams to rightsize spend, harden infrastructure, and speed up
-            delivery — without freezing your roadmap or replacing your engineers.
+            We help growing product teams spend less on cloud, harden their infrastructure, and ship faster,
+            without freezing your roadmap or replacing your engineers.
           </Reveal>
 
           <div className={cn(s.ctas, "mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center md:mt-9")}>
@@ -245,7 +243,7 @@ export function HeroSection() {
               trigger="intro"
               delay={HERO.ctas}
             >
-              Email {CONTACT_EMAIL}
+              Email us
             </CtaLink>
           </div>
 
@@ -254,7 +252,7 @@ export function HeroSection() {
               <span className={s.cueDash} />
             </span>
             <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <span className="font-mono text-hud uppercase text-paper-mute">Scroll to roll</span>
+              <span className="font-mono text-hud uppercase text-paper-mute">Scroll to explore</span>
               <a
                 href="#services"
                 className="inline-flex min-h-[44px] items-center text-sm text-paper-dim transition-colors duration-f6 hover:text-signal"
