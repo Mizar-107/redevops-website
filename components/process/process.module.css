@@ -97,6 +97,9 @@ html[data-ready][data-motion="full"] .title:not([data-inview]) .ulDia {
   container-type: size;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  /* one row exactly the viewer's height: a side column that runs tall may never grow the row and
+     push the monitor down under the timeline */
+  grid-template-rows: minmax(0, 1fr);
   align-items: center;
   column-gap: 2rem;
   padding-top: 0.5rem;
@@ -354,6 +357,18 @@ html[data-ready][data-motion="full"] .title:not([data-inview]) .ulDia {
 .logEnd {
   color: var(--signal);
 }
+/* compact monitor (short desktop viewports: the height-bound monitor drops under ~520px wide, i.e.
+   under ~290px tall). The title, a 4–5 line description and the 3-row log no longer fit title-safe
+   together; the log is decorative (aria-hidden) and only paraphrases the copy, so it gives its row
+   to the description. The end state still reads on the timeline's render bar. */
+@container (max-width: 519px) {
+  .log {
+    display: none;
+  }
+  .safe {
+    row-gap: 0;
+  }
+}
 .caret {
   display: inline-block;
   width: 0.55em;
@@ -478,6 +493,19 @@ html[data-ready][data-motion="full"] .monitor:not([data-inview]) .bootLine {
   letter-spacing: 0.06em;
   color: var(--paper-dim);
 }
+/* short viewers (queried on .viewer, the inspector's size container): the full inspector is ~19rem
+   tall. First drop the two static rows (SEQUENCE, FORMAT) and keep the live ACTIVE / IN / OUT;
+   below that there is no room for a side column at all. */
+@container (max-height: 19.5rem) {
+  .inspStatic {
+    display: none;
+  }
+}
+@container (max-height: 12.75rem) {
+  .inspector {
+    display: none;
+  }
+}
 .meters {
   grid-column: 3;
   justify-self: start;
@@ -525,8 +553,9 @@ html[data-ready][data-motion="full"] .monitor:not([data-inview]) .bootLine {
   flex: none;
   background: var(--ink-900);
   border-top: 1px solid var(--line);
-  /* bottom clearance: the fixed OSD pill (chrome layer) sits bottom-left over this band */
-  padding: 0.5rem 0 clamp(2.5rem, 6.2svh, 3.5rem);
+  /* bottom clearance: the fixed OSD and MOTION pills (chrome layer, bottom-5 · h-7 = the bottom
+     48px) sit over this band; never less than 48px + a hair of air, or they cover the A1 row */
+  padding: 0.5rem 0 clamp(3.5rem, 6.2svh, 4rem);
 }
 .tlGrid {
   display: grid;

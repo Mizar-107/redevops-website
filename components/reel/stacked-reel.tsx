@@ -58,16 +58,19 @@ function StackedCard({ service, scene, index }: { service: Service; scene: Scene
 
   useEffect(() => () => anim.current?.stop(), [])
 
-  // The active beat follows the scene as it plays (attribute writes on change only).
+  // The active beat follows the scene as it plays (attribute writes on change only). Runs after
+  // the rewind effect above, so it first syncs to the current v (a rewound card shows beat 0).
   useEffect(() => {
     let cur = lastTag
-    return v.on("change", (x) => {
+    const sync = (x: number) => {
       const b = Math.min(scene.beatAt(x), lastTag)
       if (b === cur) return
       tagsRef.current[cur]?.removeAttribute("data-on")
       tagsRef.current[b]?.setAttribute("data-on", "")
       cur = b
-    })
+    }
+    sync(v.get())
+    return v.on("change", sync)
   }, [v, scene, lastTag])
 
   return (

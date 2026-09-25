@@ -4,7 +4,7 @@ import { mulberry32 } from "@/lib/motion/math"
  * SSR poster frame for the SignalField: the designed still for no WebGL, no JS, reduced motion,
  * context loss, and the moment before the canvas fades in. Server-safe, deterministic.
  *
- * hero:    calm seeded lines spread around the horizon (--hy, default 50%), a hairline on it, a glow.
+ * hero:    calm seeded lines spread around the horizon (--hy, else the CSS estimate --hy0), a hairline on it, a glow.
  * horizon: 18 calm lines across the lower 55%, the hairline at 78% (the finale's streak row).
  */
 const VB = 1000
@@ -55,8 +55,15 @@ const HORIZON_LINES = horizonLines()
 export function SignalPoster({ preset }: { preset: "hero" | "horizon" }) {
   const hero = preset === "hero"
   const lines = hero ? HERO_LINES : HORIZON_LINES
-  // the horizon preset follows the measured streak row too (set when the field has a horizonRef)
-  const row = hero ? "var(--hy, 50%)" : "var(--hy, 78%)"
+  // Where the plate is drawn in layout (SSR) vs the row it follows. The row is --hy (measured by the
+  // field once GL is up); before that the hero uses --hy0, a CSS estimate of its horizon row
+  // (hero.module.css), so no-JS / no-WebGL / pre-GL frames already sit on the right row.
+  const base = hero ? "50%" : "78%"
+  const row = hero ? "var(--hy, var(--hy0, 50%))" : "var(--hy, 78%)"
+  // Follow the row with a transform, never `top`: --hy is written after hydration, and a transform
+  // change is not a layout shift (CLS 0). translateY % = own height = the field height, so this is
+  // the same displacement `top` would give.
+  const toRow = { transform: `translateY(calc(${row} - ${base}))` }
   return (
     <div aria-hidden="true" className="absolute inset-0" data-signal-poster="">
       <div
@@ -65,10 +72,10 @@ export function SignalPoster({ preset }: { preset: "hero" | "horizon" }) {
           background: `radial-gradient(60% 40% at 50% ${row}, rgba(34,211,238,.10), transparent 70%)`,
         }}
       />
-      {/* hero lines are centred on the horizon row, so shift the whole plate with --hy */}
+      {/* hero lines are centred on the horizon row, so the whole plate rides it */}
       <svg
-        className="absolute inset-x-0 h-full w-full"
-        style={{ top: hero ? "calc(var(--hy, 50%) - 50%)" : 0 }}
+        className="absolute inset-0 h-full w-full"
+        style={hero ? toRow : undefined}
         viewBox={`0 0 ${VB} ${VB}`}
         preserveAspectRatio="none"
         fill="none"
@@ -80,15 +87,17 @@ export function SignalPoster({ preset }: { preset: "hero" | "horizon" }) {
         </g>
       </svg>
       {/* the anamorphic streak, as a still: a soft band plus the throughline itself */}
-      <span
-        className="absolute inset-x-0 h-24 -translate-y-1/2 forced:hidden"
-        style={{
-          top: row,
-          background:
-            "radial-gradient(50% 50% at 50% 50%, rgba(124,244,255,.10), rgba(139,92,246,.05) 45%, transparent 75%)",
-        }}
-      />
-      <span className="hairline hairline-x absolute inset-x-0" style={{ top: row }} />
+      <div className="absolute inset-0" style={toRow}>
+        <span
+          className="absolute inset-x-0 h-24 -translate-y-1/2 forced:hidden"
+          style={{
+            top: base,
+            background:
+              "radial-gradient(50% 50% at 50% 50%, rgba(124,244,255,.10), rgba(139,92,246,.05) 45%, transparent 75%)",
+          }}
+        />
+        <span className="hairline hairline-x absolute inset-x-0" style={{ top: base }} />
+      </div>
     </div>
   )
 }

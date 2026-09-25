@@ -94,10 +94,12 @@ const LAYOUT = (compact: boolean): Layout =>
 
 const SLATE_Y = (compact: boolean) => (compact ? 150 : 170)
 
-function frameAt(v: number, compact: boolean): SceneFrame {
+function frameAt(v: number, compact: boolean, mode: SceneProps["mode"]): SceneFrame {
   const f: SceneFrame = {}
-  // flaky test stage
-  const flick = v < 0.35 ? (Math.floor(v * 60) % 3 === 0 ? 0.4 : 1) : 1
+  // flaky test stage: scrubbed (or still), the stroke stutters with the reader's scroll; time-played
+  // (stacked cards) v crosses [0, .35) in under a second, so it drops out once, not ~7 times (≤3 flashes/s)
+  const flick =
+    v >= 0.35 ? 1 : mode === "play" ? (v >= 0.1 && v < 0.2 ? 0.4 : 1) : Math.floor(v * 60) % 3 === 0 ? 0.4 : 1
   const settle = seg(v, 0.35, 0.55)
   const flakyStroke = mixHex(C.tungsten, C.lineStrong, settle)
   f.flakyOn = { opacity: n2(1 - settle) }
@@ -153,7 +155,7 @@ function frameAt(v: number, compact: boolean): SceneFrame {
 const AMBIENT_MS = 2400
 
 function Furniture({ progress, mode, active, compact = false }: SceneProps) {
-  const { f, reg } = useSceneDriver(progress, mode, (v) => frameAt(v, compact), [compact])
+  const { f, reg } = useSceneDriver(progress, mode, (v) => frameAt(v, compact, mode), [compact, mode])
   const L = LAYOUT(compact)
   const fs = labelSize(compact)
   const svgRef = useRef<SVGSVGElement>(null)

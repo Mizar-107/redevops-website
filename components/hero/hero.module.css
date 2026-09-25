@@ -19,10 +19,23 @@
 
 /* ---------------------------------------------------------------- layout */
 
-.content {
-  /* the line-1 size, shared with the horizon maths below */
+.hero {
+  /* the line-1 size, shared with the horizon maths below (and inherited by the field) */
   --l1-size: min(clamp(2.6rem, 1.2rem + 6vw, 7.5rem), 10.4vw);
   --slate-gap: 1.75rem;
+  /* CSS estimate of the horizon row (line 1's bottom edge), from the same terms as .content's
+     padding: slate (two 0.825rem mono lines + 0.5rem gap below md, one line at md+) + gap + line 1
+     (line-height .92). The poster sits on it until the field measures the real row into --hy, so
+     the SSR / no-JS / no-WebGL frame is already on the throughline and nothing jumps later. */
+  --hy0: calc(var(--header-h) + 10svh + 2.15rem + var(--slate-gap) + 0.92 * var(--l1-size));
+}
+@media (min-width: 768px) {
+  .hero {
+    --hy0: max(calc(var(--header-h) + 2.325rem + var(--slate-gap) + 0.92 * var(--l1-size)), 50svh);
+  }
+}
+
+.content {
   padding-top: calc(var(--header-h) + 10svh);
   padding-bottom: 4.5rem;
 }

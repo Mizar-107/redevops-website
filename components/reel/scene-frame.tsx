@@ -109,8 +109,8 @@ function TagLineImpl({ tags, track, initialOn, beatRef, className }: TagLineProp
   }
 
   return (
-    <p className={cn("font-mono text-hud uppercase", styles.tags, className)}>
-      <span className="sr-only">{tags.join(", ")}</span>
+    <p className={cn("font-mono text-hud uppercase leading-[1.6]", styles.tags, className)}>
+      <span className="sr-only select-none">{tags.join(", ")}</span>
       <span aria-hidden="true">
         {segments.map((s, i) => (
           <Fragment key={i}>

@@ -144,11 +144,11 @@ export function EditStage() {
           <div className={styles.inspector} aria-hidden="true">
             <p className={styles.inspReel}>{reelLabel("process")}</p>
             <dl className={styles.insp}>
-              <div>
+              <div className={styles.inspStatic}>
                 <dt>SEQUENCE</dt>
                 <dd>{meta.cut.toUpperCase()}</dd>
               </div>
-              <div>
+              <div className={styles.inspStatic}>
                 <dt>FORMAT</dt>
                 <dd>1.78:1 · 24 FPS</dd>
               </div>

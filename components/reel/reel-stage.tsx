@@ -92,7 +92,7 @@ const MaskTitle = memo(function MaskTitle({ text }: { text: string }) {
   const words = text.split(/\s+/).filter(Boolean)
   return (
     <span className="split">
-      <span className="sr-only">{text}</span>
+      <span className="sr-only select-none">{text}</span>
       <span aria-hidden="true">
         {words.map((w, i) => (
           <Fragment key={i}>
@@ -152,7 +152,7 @@ export function ReelStage({ scenes = SCENES }: { scenes?: readonly SceneModule[]
   const seamFrom = useRef(0.5)
 
   useStickyGuard(stageRef)
-  const { progress } = useScrub(wrapRef, ["start start", "end end"])
+  const { raw, progress } = useScrub(wrapRef, ["start start", "end end"])
   const { letterbox } = useChrome()
   const reduced = useReducedMotionSafe()
   const [chapter, setChapter] = useState(0)
@@ -183,12 +183,18 @@ export function ReelStage({ scenes = SCENES }: { scenes?: readonly SceneModule[]
       const m = mapReel(p)
       s.lastP = p
 
-      // letterbox bars + chapter tracks + the shared chrome value (header merges above .5)
+      // letterbox bars + chapter tracks + the shared chrome value (header merges above .5).
+      // The bars follow the smoothed p; the page chrome is gated by raw scroll so a jump past the
+      // wrap (End, nav click, deep link) drops the header merge / 2.39:1 chip at once instead of
+      // riding the spring's sweep over whatever section is now on screen.
       lbRef.current?.update(m.lb, m.pp * 4)
-      if (Math.abs(letterbox.get() - m.lb) > 1e-4 || (m.lb === 0 && letterbox.get() !== 0)) letterbox.set(m.lb)
+      const r = raw.get()
+      const lb = r <= 0 || r >= 1 ? 0 : m.lb
+      if (Math.abs(letterbox.get() - lb) > 1e-4 || (lb === 0 && letterbox.get() !== 0)) letterbox.set(lb)
 
-      // engage / release phase: text rises when the bars close, exits when they open
-      const phase = p < 0.02 ? "pre" : p > 0.98 ? "post" : "live"
+      // engage phase: the text rises when the bars close. On release the last chapter's copy
+      // stays and scrolls away beside the seam (only the monitor fades).
+      const phase = p < 0.02 ? "pre" : "live"
       if (phase !== s.phase) {
         s.phase = phase
         stageRef.current?.setAttribute("data-phase", phase)
@@ -235,7 +241,7 @@ export function ReelStage({ scenes = SCENES }: { scenes?: readonly SceneModule[]
         }
       }
     },
-    [letterbox, scenes],
+    [letterbox, raw, scenes],
   )
 
   // Only drive anything while the pinned layout is actually displayed (lg + motion full).
@@ -274,11 +280,18 @@ export function ReelStage({ scenes = SCENES }: { scenes?: readonly SceneModule[]
       queued = true
       frame.update(run)
     })
+    // raw hitting an end (wrap fully past) gates the page chrome off even before the spring moves
+    const offRaw = raw.on("change", (r) => {
+      if (!st.current.enabled || (r > 0 && r < 1) || letterbox.get() === 0 || queued) return
+      queued = true
+      frame.update(run)
+    })
     return () => {
       off()
+      offRaw()
       cancelFrame(run)
     }
-  }, [progress, render, setScenes])
+  }, [progress, raw, letterbox, render, setScenes])
 
   // The seam rules continue the monitor's K0 row to both viewport edges: cache its geometry.
   useEffect(() => {
@@ -358,6 +371,8 @@ export function ReelStage({ scenes = SCENES }: { scenes?: readonly SceneModule[]
                     <MaskTitle text={s.title} />
                   </h3>
                   <p className={`${styles.desc} mt-5 max-w-[44ch] text-body text-paper-dim`}>{s.description}</p>
+                  {/* each chapter carries its own scene description (the shared monitor is decorative) */}
+                  <p className="sr-only select-none">{scenes[i].ariaLabel}</p>
                   <TagLine
                     className="mt-6 max-w-[48ch]"
                     tags={s.tags}
@@ -370,7 +385,7 @@ export function ReelStage({ scenes = SCENES }: { scenes?: readonly SceneModule[]
 
             {/* the monitor */}
             <div className="col-span-7">
-              <div ref={monitorRef} className={styles.monitor} role="img" aria-label={scene.ariaLabel}>
+              <div ref={monitorRef} className={styles.monitor} aria-hidden="true">
                 <div ref={chromeRef} className={cn("vf-host", styles.chrome)}>
                   <ViewfinderFrame always />
                   <div className={styles.screen}>

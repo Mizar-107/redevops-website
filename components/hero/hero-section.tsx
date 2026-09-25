@@ -115,7 +115,7 @@ export function HeroSection() {
       ref={sectionRef}
       id="home"
       aria-labelledby="hero-title"
-      className="vignette relative min-h-[100svh] overflow-clip"
+      className={cn("vignette relative min-h-[100svh] overflow-clip", s.hero)}
     >
       <SignalField preset="hero" progress={progress} avoidRef={h1Ref} bladeRef={l1Ref} horizonRef={horizonRef} />
 

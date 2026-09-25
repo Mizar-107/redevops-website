@@ -123,7 +123,7 @@
   min-height: 44px;
   padding: 16px 0 8px;
   text-align: left;
-  color: var(--paper-mute);
+  color: var(--paper-dim);
   cursor: pointer;
   transition: color 150ms linear;
 }
@@ -144,7 +144,7 @@
 }
 @media (hover: hover) and (pointer: fine) {
   .chap:hover {
-    color: var(--paper-dim);
+    color: var(--paper);
   }
   .chap[data-active]:hover {
     color: var(--paper);
@@ -192,7 +192,9 @@
 }
 .article {
   grid-area: 1 / 1;
-  align-self: center;
+  /* one shared top edge: every chapter's numeral and title land on the same row (the cell
+     itself is centred against the monitor by the frame grid) */
+  align-self: start;
 }
 .numeral {
   display: block;
@@ -226,6 +228,7 @@
   white-space: pre;
 }
 .beat {
+  white-space: nowrap;
   transition: color 150ms linear;
 }
 .beat[data-on] {
@@ -261,23 +264,22 @@
   transform: translateY(110%);
   transition: transform var(--f6) var(--ease-exit);
 }
-/* exited up through the matte: already played, or the stage has released */
+/* exited up through the matte: already played (on release the last chapter's copy stays and
+   scrolls away beside the seam — only the monitor fades) */
 .article[data-state="after"] :global(.wi),
-.article[data-state="after"] .numIn,
-.stage[data-phase="post"] .article[data-state="active"] :global(.wi),
-.stage[data-phase="post"] .article[data-state="active"] .numIn {
+.article[data-state="after"] .numIn {
   transform: translateY(-110%);
   transition: transform var(--f6) var(--ease-exit);
 }
-.article[data-state="before"]  .desc,
-.article[data-state="after"]  .desc,
-.stage:is([data-phase="pre"], [data-phase="post"]) .article[data-state="active"]  .desc {
+.article[data-state="before"] .desc,
+.article[data-state="after"] .desc,
+.stage[data-phase="pre"] .article[data-state="active"] .desc {
   opacity: 0;
   transition: opacity var(--f4) linear;
 }
 .article[data-state="before"] .ch,
 .article[data-state="after"] .ch,
-.stage:is([data-phase="pre"], [data-phase="post"]) .article[data-state="active"] .ch {
+.stage[data-phase="pre"] .article[data-state="active"] .ch {
   opacity: 0;
   transform: translateX(calc(var(--k, 0) * 0.35em));
   transition:
@@ -294,6 +296,13 @@
   aspect-ratio: 16 / 10;
   width: min(100%, calc((100svh - var(--bar-top) - var(--bar-bot) - 4.5rem) * 1.6));
   margin-inline: auto 0;
+  transition: opacity var(--f9) linear;
+}
+/* approach (not yet pinned): the monitor waits dimmed, like a standby screen, and comes up to
+   full strength with the K0 draw and the title rise when the bars engage */
+.stage[data-phase="pre"] .monitor {
+  opacity: 0.35;
+  transition-duration: var(--f6);
 }
 .chrome {
   position: absolute;
@@ -457,6 +466,10 @@
   }
 }
 @media (forced-colors: active) {
+  /* inactive stacked articles still paint Canvas text backplates; keep the active one on top */
+  .article[data-state="active"] {
+    z-index: 1;
+  }
   .trackFill,
   .gate {
     box-shadow: none;
