@@ -1,0 +1,236 @@
+/* =====================================================================================
+   INTERMISSION (W8) · marquee · 30-minute dial · card
+   SSR / no-JS / reduced motion / data-inview="instant" all render the final frame. Hidden
+   starting states only under html[data-ready][data-motion="full"] before the element's own
+   reveal. Only transform / opacity animate (plus the dial wedge's stroke-dashoffset, per spec).
+   ===================================================================================== */
+
+/* ---------------------------------------------------------------- marquee (behind the card) */
+.marquee {
+  position: absolute;
+  inset-inline: 0;
+  /* the cap line sits just inside the section: the letters rise from behind the card's top edge
+     (desktop: their upper third; phones: the whole word fits in the top padding) */
+  top: 0.75rem;
+  z-index: 0;
+  font-size: 18vw;
+  line-height: 0.8;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.track {
+  display: flex;
+  width: max-content;
+  white-space: pre;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(236, 239, 244, 0.07);
+}
+.copy {
+  flex: none;
+}
+/* 4 identical copies; the loop moves exactly one copy (≈1.38 × viewport width) per cycle, so it is
+   seamless. The copy scales with vw, so the cycle length steps with the viewport to hold ≈ 40px/s. */
+html[data-motion="full"] .track {
+  animation: marquee-run var(--marquee-dur, 60s) linear infinite;
+}
+.marquee {
+  --marquee-dur: 16s;
+}
+@media (min-width: 640px) {
+  .marquee {
+    --marquee-dur: 26s;
+  }
+}
+@media (min-width: 1024px) {
+  .marquee {
+    --marquee-dur: 44s;
+  }
+}
+@media (min-width: 1440px) {
+  .marquee {
+    --marquee-dur: 60s;
+  }
+}
+@keyframes marquee-run {
+  to {
+    transform: translateX(-25%);
+  }
+}
+
+/* ---------------------------------------------------------------- card */
+.card {
+  isolation: isolate;
+}
+/* Eyebrow. The foundation slate rule is a width:100% flex item, so it claims its 240px cap and squeezes
+   the label into wrapping; basis 0 makes it take only the space left over. On phones the 37-character
+   label needs the full measure: tighter tracking, no rule, whole words only. */
+.eyebrow :global(.slate-label) {
+  overflow-wrap: normal;
+}
+.eyebrow :global(.slate-rule) {
+  flex-basis: 0;
+}
+@media (max-width: 639.98px) {
+  .eyebrow:global(.slate) {
+    letter-spacing: 0.1em;
+  }
+  .eyebrow :global(.slate-rule) {
+    display: none;
+  }
+}
+@media (max-width: 374.98px) {
+  .eyebrow:global(.slate) {
+    letter-spacing: 0.06em;
+  }
+}
+
+/* ---------------------------------------------------------------- 30-minute dial */
+.dial {
+  position: relative;
+  flex: none;
+  width: 160px;
+  height: 160px;
+}
+.dialSvg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.bezel {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 1;
+}
+.wedge {
+  fill: none;
+  stroke: var(--signal);
+  stroke-opacity: 0.11;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+.ticks {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 1;
+}
+.litMinor,
+.litMajor {
+  stroke: var(--signal);
+  stroke-linecap: butt;
+}
+.litMinor {
+  stroke-width: 1;
+  opacity: 0.5;
+}
+.litMajor {
+  stroke-width: 1.5;
+  opacity: 1;
+}
+.hand {
+  transform-box: view-box;
+  transform-origin: 80px 80px;
+  transform: rotate(360deg);
+}
+.handHalo,
+.handCore {
+  stroke: var(--signal);
+  stroke-linecap: round;
+}
+/* §4.2 SVG glow: halo 8px at 14% + core 1.5px at 100% (no filters) */
+.handHalo {
+  stroke-width: 8;
+  stroke-opacity: 0.14;
+}
+.handCore {
+  stroke-width: 1.5;
+}
+.hub {
+  fill: var(--ink-900);
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.cap {
+  transform-box: view-box;
+  transform-origin: 80px 17px;
+}
+.capTick {
+  stroke: var(--signal);
+  stroke-width: 1.5;
+}
+.capHead {
+  fill: var(--signal);
+}
+.dialLabel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* one text node, stacked like a timer face: "30" (first line, light numeral) over "MIN" */
+.dialText {
+  display: block;
+  width: min-content;
+  padding-top: 0.2em;
+  text-align: center;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-feature-settings: "tnum" 1, "zero" 1;
+  font-size: 0.5625rem;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: 0.2em;
+  text-indent: 0.2em; /* optically centre the tracked caps */
+  color: var(--paper-mute);
+  white-space: normal;
+}
+.dialText::first-line {
+  font-size: 1.375rem;
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--paper);
+}
+
+/* hidden (pre-reveal) frame: an empty dial, hand parked at 12 */
+html[data-ready][data-motion="full"] .dial:not([data-inview]) .wedge {
+  stroke-dashoffset: 1;
+}
+html[data-ready][data-motion="full"] .dial:not([data-inview]) .hand {
+  transform: rotate(0deg);
+}
+html[data-ready][data-motion="full"] .dial:not([data-inview]) .litMinor,
+html[data-ready][data-motion="full"] .dial:not([data-inview]) .litMajor {
+  opacity: 0;
+}
+html[data-ready][data-motion="full"] .dial:not([data-inview]) .cap {
+  transform: scale(0);
+}
+
+/* the sweep: wedge + hand linear over f36; tick k lights on the frame the hand reaches it */
+.dial[data-inview="1"] .wedge {
+  transition: stroke-dashoffset var(--f36) linear var(--dial-d, 0ms);
+}
+.dial[data-inview="1"] .hand {
+  transition: transform var(--f36) linear var(--dial-d, 0ms);
+}
+.dial[data-inview="1"] .litMinor,
+.dial[data-inview="1"] .litMajor {
+  transition: opacity var(--f2) linear calc(var(--dial-d, 0ms) + var(--f36) * var(--k, 0) / 60);
+}
+.dial[data-inview="1"] .cap {
+  transition: transform var(--f9) var(--spring-clap) calc(var(--dial-d, 0ms) + var(--f36));
+}
+
+@media (forced-colors: active) {
+  .track {
+    display: none;
+  }
+  .handHalo,
+  .wedge {
+    display: none;
+  }
+}

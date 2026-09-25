@@ -11,6 +11,7 @@ import { MotionProvider } from "@/components/motion/motion-provider"
  * Pre-paint boot (runs before first paint, before React):
  * - html.js; html[data-motion] = full | reduce (OS setting, overridden by the MOTION toggle in localStorage)
  * - html[data-intro] = play (first visit this session, motion full, no hash) | seen; any input during play → skip
+ *   (Tab / modifier keys excepted, so the Skip intro button stays keyboard-reachable)
  * - window.__rdoIntro.t0 = the intro clock origin shared with CSS intro animations
  * - bfcache restores never replay the intro
  */
@@ -19,7 +20,7 @@ try{var p=localStorage.getItem("rdo:motion");var rm=matchMedia("(prefers-reduced
 d.setAttribute("data-motion",m);
 try{if(m==="full"&&!location.hash&&!sessionStorage.getItem("rdo:intro")){i="play";sessionStorage.setItem("rdo:intro","1")}}catch(e){}
 d.setAttribute("data-intro",i);window.__rdoIntro={t0:performance.now(),mode:i};
-if(i==="play"){var ev=["keydown","pointerdown","wheel","touchstart"],sk=function(){if(d.getAttribute("data-intro")==="play")d.setAttribute("data-intro","skip");off()},off=function(){ev.forEach(function(e){removeEventListener(e,sk,true)})};ev.forEach(function(e){addEventListener(e,sk,{capture:true,passive:true})});setTimeout(off,1500)}
+if(i==="play"){var ev=["keydown","pointerdown","wheel","touchstart"],sk=function(e){if(e&&e.type==="keydown"&&/^(Tab|Shift|Control|Alt|Meta|CapsLock)$/.test(e.key))return;if(d.getAttribute("data-intro")==="play")d.setAttribute("data-intro","skip");off()},off=function(){ev.forEach(function(e){removeEventListener(e,sk,true)})};ev.forEach(function(e){addEventListener(e,sk,{capture:true,passive:true})});setTimeout(off,1500)}
 addEventListener("pageshow",function(e){if(e.persisted&&d.getAttribute("data-intro")==="play")d.setAttribute("data-intro","seen")})})();`
 
 export const metadata: Metadata = {

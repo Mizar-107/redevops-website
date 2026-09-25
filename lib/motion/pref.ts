@@ -88,12 +88,40 @@ declare global {
   }
 }
 
+let clockOrigin: number | null = null
+
 /**
- * Milliseconds from now until `heroT0 + delayMs` on the page's intro clock (which starts when the
- * boot script ran, i.e. the same origin CSS intro animations use). Never negative.
+ * The intro clock origin in performance.now() time: when the CSS intro animations actually started
+ * (first style resolution of <body>). CSS animation start times share performance.now()'s time origin,
+ * so this is read from the earliest CSS animation; before any exists it falls back to the boot
+ * script's timestamp (which runs slightly earlier, in <head>). Cached once resolved.
+ */
+export function introClockOrigin(): number {
+  if (typeof window === "undefined") return 0
+  if (clockOrigin != null) return clockOrigin
+  const boot = window.__rdoIntro?.t0 ?? 0
+  try {
+    if (typeof document.getAnimations === "function" && typeof CSSAnimation !== "undefined") {
+      let min = Infinity
+      for (const a of document.getAnimations()) {
+        if (a instanceof CSSAnimation && typeof a.startTime === "number") min = Math.min(min, a.startTime)
+      }
+      if (min !== Infinity && min >= boot - 1 && min - boot < 1500) {
+        clockOrigin = min
+        return min
+      }
+    }
+  } catch {
+    /* fall through to the boot timestamp */
+  }
+  return boot
+}
+
+/**
+ * Milliseconds from now until `heroT0 + delayMs` on the page's intro clock (the same origin the CSS
+ * intro animations use). Never negative.
  */
 export function introRemaining(delayMs = 0): number {
   if (typeof window === "undefined") return 0
-  const t0 = window.__rdoIntro?.t0 ?? 0
-  return Math.max(0, t0 + heroT0Ms() + delayMs - performance.now())
+  return Math.max(0, introClockOrigin() + heroT0Ms() + delayMs - performance.now())
 }

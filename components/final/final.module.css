@@ -1,0 +1,484 @@
+/* =====================================================================================
+   FINAL CUT (#final) + END CREDITS (footer#credits) — W9.
+   SSR / no-JS / reduced motion render the final frame everywhere in this file: the sting shows
+   its last motif, "calmer" sits straight in signal, the booking underline is lit, the credits
+   column sits at its natural position with no mask. Hidden / pre-roll states apply only under
+   html[data-motion="full"] (JS ran, motion allowed). Only transform, opacity and clip-path animate.
+   ===================================================================================== */
+
+/* ---------------------------------------------------------------- section furniture */
+/* radial scrim that keeps the reading column quiet over the horizon field */
+.scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 56% 50% at 50% 50%,
+    rgba(5, 6, 10, 0.7),
+    rgba(5, 6, 10, 0.5) 45%,
+    rgba(5, 6, 10, 0) 78%
+  );
+}
+@media (max-width: 767px) {
+  .scrim {
+    background: radial-gradient(
+      ellipse 95% 55% at 50% 50%,
+      rgba(5, 6, 10, 0.7),
+      rgba(5, 6, 10, 0.5) 50%,
+      rgba(5, 6, 10, 0) 85%
+    );
+  }
+}
+
+/* 1px row across the section's vertical middle: when it crosses into view the section is
+   (about) half on screen, which is when the recap sting rolls. */
+.sentinel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  pointer-events: none;
+}
+
+/* the foundation slate rule (flex 1 1 auto) squeezes the label at phone width */
+.slateFit :global(.slate-rule) {
+  flex-basis: 0;
+}
+
+/* ---------------------------------------------------------------- "calmer" */
+/* room above the word's matte so a letter lifted 3px / rotated 1.5° never clips */
+.calmerW {
+  padding-top: 0.12em !important;
+  margin-top: -0.12em !important;
+}
+.calmer {
+  color: var(--signal);
+}
+.letter {
+  position: relative;
+  display: inline-block;
+  transform-origin: 50% 72%;
+}
+/* the nervous state is paper; each letter goes signal (resolved) the moment it settles */
+.letter::after {
+  content: attr(data-ch);
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--paper);
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
+}
+html[data-ready][data-motion="full"] [data-reveal]:not([data-inview]) .letter {
+  transform: translate3d(0, var(--y0), 0) rotate(var(--r0));
+}
+html[data-ready][data-motion="full"] [data-reveal]:not([data-inview]) .letter::after {
+  opacity: 1;
+}
+/* later animation in the list wins while active: the jitter owns the letter until it ends, then
+   the settle (already holding its start pose via fill) takes over on the same frame. */
+[data-inview="1"] .letter {
+  animation:
+    calmer-settle var(--f9) var(--spring-clap) calc(var(--wd, 0ms) + var(--ls)) both,
+    calmer-jitter calc(5 * var(--f2)) steps(1, end) var(--wd, 0ms) var(--jn) backwards;
+}
+[data-inview="1"] .letter::after {
+  animation: calmer-untint var(--f3) linear calc(var(--wd, 0ms) + var(--ls)) both;
+}
+/* 12 Hz: five seeded poses, one per f2 */
+@keyframes calmer-jitter {
+  0% {
+    transform: translate3d(0, var(--y0), 0) rotate(var(--r0));
+  }
+  20% {
+    transform: translate3d(0, var(--y1), 0) rotate(var(--r1));
+  }
+  40% {
+    transform: translate3d(0, var(--y2), 0) rotate(var(--r2));
+  }
+  60% {
+    transform: translate3d(0, var(--y3), 0) rotate(var(--r3));
+  }
+  80% {
+    transform: translate3d(0, var(--y4), 0) rotate(var(--r4));
+  }
+  100% {
+    transform: translate3d(0, var(--y0), 0) rotate(var(--r0));
+  }
+}
+@keyframes calmer-settle {
+  from {
+    transform: translate3d(0, var(--sy), 0) rotate(var(--sr));
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes calmer-untint {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* ---------------------------------------------------------------- recap sting */
+.sting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.monitor {
+  position: relative;
+  width: 180px;
+  height: 112px;
+  flex: none;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--ink-900);
+}
+.screen {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  border-radius: 5px;
+}
+.screen svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.frame {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform-origin: 50% 50%;
+}
+/* the final frame (merged braid) is the SSR / still state */
+.frameLast {
+  opacity: 1;
+}
+.flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+}
+.standby,
+.ghost,
+.cline {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 50%;
+  height: 1px;
+  margin-top: -0.5px;
+  opacity: 0;
+  pointer-events: none;
+}
+.standby {
+  background: var(--line-strong);
+}
+.ghost {
+  background: repeating-linear-gradient(90deg, var(--line-strong) 0 3px, transparent 3px 7px);
+}
+.cline {
+  transform-origin: 50% 50%;
+}
+
+.stingMeta {
+  display: flex;
+  width: 188px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  line-height: 1.2;
+  letter-spacing: 0.14em;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: var(--paper-mute);
+  font-feature-settings: "tnum" 1, "zero" 1;
+  white-space: nowrap;
+}
+.labels {
+  display: grid;
+  justify-items: end;
+}
+.lab {
+  grid-area: 1 / 1;
+  opacity: 0;
+}
+.lab b {
+  font-weight: 500;
+  color: var(--signal);
+}
+.labFinal {
+  opacity: 1;
+}
+
+/* motion full, before the roll: a standby monitor (never a spoiler of the last motif) */
+html[data-motion="full"] .sting:not([data-state]) .frameLast,
+html[data-motion="full"] .sting:not([data-state]) .labFinal {
+  opacity: 0;
+}
+html[data-motion="full"] .sting:not([data-state]) .standby,
+html[data-motion="full"] .sting:not([data-state]) .labStandby {
+  opacity: 1;
+}
+
+/* the roll: four hard cuts, f9 each; one f1 flash of 8% white per cut, inside the monitor only
+   (≤ 2.7 cuts/s). Every piece is a CSS animation started in the same style pass, so the cuts can
+   never drift apart. */
+.sting[data-state="play"] .frameLast,
+.sting[data-state="play"] .labFinal {
+  opacity: 0;
+}
+.sting[data-state="play"] .frame {
+  animation: sting-on var(--f9) steps(1, end) calc(var(--k) * var(--f9));
+}
+.sting[data-state="play"] .frameLast {
+  animation:
+    sting-on calc(2 * var(--f9)) steps(1, end) calc(3 * var(--f9)),
+    sting-squash var(--f9) var(--ease-cut) calc(4 * var(--f9)) forwards;
+}
+.sting[data-state="play"] .flash {
+  animation: sting-flash var(--f1) steps(1, end) calc(var(--k) * var(--f9)) both;
+}
+.sting[data-state="play"] .cline {
+  animation: sting-line var(--f9) var(--ease-cut) calc(4 * var(--f9)) forwards;
+}
+.sting[data-state="play"] .labMotif {
+  animation: sting-on var(--f9) steps(1, end) calc(var(--k) * var(--f9));
+}
+.sting[data-state="play"] .labFinal {
+  animation: sting-on var(--f9) steps(1, end) calc(3 * var(--f9)) forwards;
+}
+
+/* the line has left the monitor: a dim trace stays where it was */
+.sting[data-state="flight"] .frameLast,
+.sting[data-state="flight"] .labFinal,
+.sting[data-state="done"] .frameLast,
+.sting[data-state="done"] .labFinal {
+  opacity: 0;
+}
+.sting[data-state="flight"] .ghost,
+.sting[data-state="flight"] .labOut,
+.sting[data-state="done"] .ghost,
+.sting[data-state="done"] .labOut {
+  opacity: 1;
+}
+
+@keyframes sting-on {
+  from,
+  to {
+    opacity: 1;
+  }
+}
+@keyframes sting-flash {
+  from {
+    opacity: 0.08;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes sting-squash {
+  to {
+    transform: scaleY(0);
+  }
+}
+@keyframes sting-line {
+  from {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(0.6);
+  }
+}
+
+/* the detached throughline that FLIPs from the sting to the booking button's underline */
+.flyer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 1px;
+  opacity: 0;
+  z-index: 20;
+  transform-origin: 0 50%;
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------- booking CTA */
+/* still (no JS / reduced / MOTION off): the underline is lit from the start */
+html:not([data-motion="full"]) .book :global(.cta-underline) {
+  transform: none;
+}
+html:not([data-motion="full"]) .book :global(.cta-glow) {
+  opacity: 1;
+}
+
+/* ---------------------------------------------------------------- copy email */
+.copy {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 60px;
+  height: 60px;
+  border-radius: 10px;
+  border: 1px solid var(--line-strong);
+  background: rgba(5, 6, 10, 0.4);
+  color: var(--paper-dim);
+  transition:
+    color 150ms linear,
+    border-color 150ms linear;
+}
+@media (hover: hover) and (pointer: fine) {
+  .copy:hover {
+    color: var(--signal);
+    border-color: rgba(34, 211, 238, 0.6);
+  }
+}
+.copy[data-state="copied"] {
+  color: var(--signal);
+  border-color: rgba(34, 211, 238, 0.6);
+}
+.copyIcon {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  overflow: visible;
+}
+.copyIcon path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset var(--f6) var(--ease-cut);
+}
+.copyIcon .checkPath {
+  stroke-dashoffset: 1;
+}
+.copy[data-state="copied"] .copyIcon .glyphPath {
+  stroke-dashoffset: 1;
+}
+.copy[data-state="copied"] .copyIcon .checkPath {
+  stroke-dashoffset: 0;
+  transition-delay: var(--f2);
+}
+.copyLabel {
+  display: grid;
+  overflow: clip;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.5625rem;
+  line-height: 1.2;
+  letter-spacing: 0.14em;
+  font-weight: 500;
+  text-transform: uppercase;
+  padding-left: 0.14em;
+}
+.copyLabel > span {
+  grid-area: 1 / 1;
+  justify-self: center;
+  transition: transform var(--f6) var(--ease-title);
+}
+.copyLabel > span + span {
+  transform: translateY(115%);
+}
+.copy[data-state="copied"] .copyLabel > span:first-child {
+  transform: translateY(-115%);
+}
+.copy[data-state="copied"] .copyLabel > span + span {
+  transform: none;
+}
+
+/* =====================================================================================
+   END CREDITS
+   ===================================================================================== */
+.crawl {
+  position: relative;
+}
+html[data-motion="full"] .crawl {
+  height: 60svh;
+  min-height: 22rem;
+  overflow: clip;
+  -webkit-mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent);
+  mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent);
+}
+/* still: the column sits at its natural position (beats the inline scroll-linked transform) */
+html:not([data-motion="full"]) .crawlCol {
+  transform: none !important;
+}
+.credit {
+  display: grid;
+  gap: 0.625rem;
+  text-align: center;
+}
+@media (min-width: 640px) {
+  .credit {
+    grid-template-columns: 1fr 1fr;
+    column-gap: 2.5rem;
+    text-align: left;
+  }
+  .credit dt {
+    text-align: right;
+    padding-top: 0.5em;
+  }
+}
+.names li + li {
+  margin-top: 0.35rem;
+}
+
+/* ---------------------------------------------------------------- utility footer */
+.navLink {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  min-height: 44px;
+  align-items: center;
+  color: var(--paper-dim);
+  transition: color 150ms linear;
+}
+.navText {
+  position: relative;
+}
+.navText::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--f9) var(--ease-cut);
+}
+@media (hover: hover) and (pointer: fine) {
+  .navLink:hover {
+    color: var(--paper);
+  }
+  .navLink:hover .navText::after {
+    transform: none;
+  }
+}
+.navLink:focus-visible .navText::after {
+  transform: none;
+}

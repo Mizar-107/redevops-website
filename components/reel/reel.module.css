@@ -1,0 +1,469 @@
+/* =====================================================================================
+   REEL 02 · SERVICES — the widescreen reel (W4)
+   Pinned stage (lg + motion full) and the stacked layout (everything else).
+   Scroll-linked values are written imperatively (style / attributes / --lb); the only
+   time-played moves here are text reveals on chapter change (CSS transitions).
+   ===================================================================================== */
+
+/* ---------------------------------------------------------------- stage geometry */
+.stage {
+  /* 2.39:1 letterbox bar height, clamped; the top bar always clears the header */
+  --bar: clamp(6svh, calc((100svh - 100vw / 2.39) / 2), 18svh);
+  --bar-top: max(var(--bar), calc(var(--header-h) + 16px));
+  /* room for the chapter row above the fixed bottom chrome (OSD / MOTION pill) */
+  --bar-bot: max(var(--bar), 104px);
+  background: var(--ink-950);
+}
+
+.frame {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--bar-top);
+  bottom: var(--bar-bot);
+  display: flex;
+  align-items: center;
+}
+
+/* ---------------------------------------------------------------- letterbox */
+.lb {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  --lb: 0;
+}
+.lbTop,
+.lbBot {
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+.lbTop {
+  top: 0;
+  height: var(--bar-top);
+}
+.lbBot {
+  bottom: 0;
+  height: var(--bar-bot);
+}
+.lbFill {
+  position: absolute;
+  inset: 0;
+  background: var(--ink-950);
+  transform: scaleY(var(--lb));
+}
+.lbTop .lbFill {
+  transform-origin: 50% 0;
+}
+.lbBot .lbFill {
+  transform-origin: 50% 100%;
+}
+/* the inner edge (hairline + HUD) rides the bar's inner edge */
+.lbEdge {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+}
+.lbTop .lbEdge {
+  transform: translate3d(0, calc((var(--lb) - 1) * 100%), 0);
+}
+.lbBot .lbEdge {
+  transform: translate3d(0, calc((1 - var(--lb)) * 100%), 0);
+}
+.lbRule {
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+.lbTop .lbRule {
+  bottom: 0;
+}
+.lbBot .lbRule {
+  top: 0;
+}
+.hudRow {
+  /* only once the bar is mostly closed (it would otherwise peek out under the header) */
+  opacity: calc((var(--lb) - 0.6) * 2.5);
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 14px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--paper-mute);
+}
+.hudRow b {
+  font-weight: 500;
+  color: var(--paper-dim);
+}
+
+/* chapter buttons (bottom bar) */
+.chapters {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  pointer-events: auto;
+}
+.chapterList {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2rem;
+}
+.chap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 16px 0 8px;
+  text-align: left;
+  color: var(--paper-mute);
+  cursor: pointer;
+  transition: color 150ms linear;
+}
+.chapLabel {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75em;
+  white-space: nowrap;
+}
+.chapNum {
+  transition: color 150ms linear;
+}
+.chap[data-active] {
+  color: var(--paper);
+}
+.chap[data-active] .chapNum {
+  color: var(--signal);
+}
+@media (hover: hover) and (pointer: fine) {
+  .chap:hover {
+    color: var(--paper-dim);
+  }
+  .chap[data-active]:hover {
+    color: var(--paper);
+  }
+}
+.track {
+  position: relative;
+  display: block;
+  height: 1px;
+  background: var(--line-strong);
+}
+.trackFill {
+  position: absolute;
+  inset: 0;
+  background: var(--signal);
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.45);
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+}
+/* playhead tick riding the fill's leading edge */
+.trackHead {
+  position: absolute;
+  inset: 0;
+  transform: translate3d(0, 0, 0);
+  opacity: 0;
+  transition: opacity var(--f6) linear;
+}
+.trackHead::before {
+  content: "";
+  position: absolute;
+  top: -3px;
+  left: -0.5px;
+  width: 1px;
+  height: 7px;
+  background: var(--signal-hot);
+  box-shadow: 0 0 8px rgba(124, 244, 255, 0.8);
+}
+.chap[data-active] .trackHead {
+  opacity: 1;
+}
+
+/* ---------------------------------------------------------------- articles */
+.articles {
+  display: grid;
+}
+.article {
+  grid-area: 1 / 1;
+  align-self: center;
+}
+.numeral {
+  display: block;
+  overflow: clip;
+  padding-bottom: 0.06em;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--line-strong);
+  user-select: none;
+}
+.numIn {
+  display: inline-block;
+}
+.title {
+  text-wrap: balance;
+}
+.desc {
+  text-wrap: pretty;
+}
+
+/* tag line (mono beats) */
+.tags {
+  color: var(--paper-mute);
+}
+.word {
+  display: inline-block;
+  white-space: nowrap;
+}
+.ch {
+  display: inline-block;
+  white-space: pre;
+}
+.beat {
+  transition: color 150ms linear;
+}
+.beat[data-on] {
+  color: var(--signal);
+}
+.arrow {
+  color: var(--line-strong);
+}
+
+/* chapter states — resting positions (the SSR/active state is the final visible state) */
+.article :global(.wi),
+.article .numIn {
+  transform: none;
+  transition: transform var(--f12) var(--ease-title) calc(var(--f4) + var(--wd, 0ms));
+}
+.article .desc {
+  opacity: 1;
+  transition: opacity var(--f9) linear calc(var(--f4) + var(--f3));
+}
+.article .ch {
+  opacity: 1;
+  transform: none;
+  transition:
+    transform var(--f12) var(--ease-title) calc(var(--f4) + var(--f6)),
+    opacity 200ms linear calc(var(--f4) + var(--f6));
+}
+
+/* waiting below the matte: not yet reached, or the stage has not engaged */
+.article[data-state="before"] :global(.wi),
+.article[data-state="before"] .numIn,
+.stage[data-phase="pre"] .article[data-state="active"] :global(.wi),
+.stage[data-phase="pre"] .article[data-state="active"] .numIn {
+  transform: translateY(110%);
+  transition: transform var(--f6) var(--ease-exit);
+}
+/* exited up through the matte: already played, or the stage has released */
+.article[data-state="after"] :global(.wi),
+.article[data-state="after"] .numIn,
+.stage[data-phase="post"] .article[data-state="active"] :global(.wi),
+.stage[data-phase="post"] .article[data-state="active"] .numIn {
+  transform: translateY(-110%);
+  transition: transform var(--f6) var(--ease-exit);
+}
+.article[data-state="before"]  .desc,
+.article[data-state="after"]  .desc,
+.stage:is([data-phase="pre"], [data-phase="post"]) .article[data-state="active"]  .desc {
+  opacity: 0;
+  transition: opacity var(--f4) linear;
+}
+.article[data-state="before"] .ch,
+.article[data-state="after"] .ch,
+.stage:is([data-phase="pre"], [data-phase="post"]) .article[data-state="active"] .ch {
+  opacity: 0;
+  transform: translateX(calc(var(--k, 0) * 0.35em));
+  transition:
+    transform var(--f4) var(--ease-exit),
+    opacity var(--f4) linear;
+}
+.article:not([data-state="active"]) {
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------- monitor */
+.monitor {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  width: min(100%, calc((100svh - var(--bar-top) - var(--bar-bot) - 4.5rem) * 1.6));
+  margin-inline: auto 0;
+}
+.chrome {
+  position: absolute;
+  inset: 0;
+}
+.screen {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background:
+    radial-gradient(90% 70% at 50% 50%, rgba(34, 211, 238, 0.035), transparent 70%),
+    var(--ink-900);
+}
+.layer {
+  position: absolute;
+  inset: 0;
+}
+/* only the first scene shows before the first imperative write */
+.layer + .layer {
+  visibility: hidden;
+}
+.monLabel {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  z-index: 5;
+  display: flex;
+  gap: 0.5em;
+  color: var(--paper-mute);
+  pointer-events: none;
+}
+.monLabel b {
+  font-weight: 500;
+  color: var(--paper-dim);
+}
+.monTc {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  z-index: 5;
+  color: var(--paper-mute);
+  pointer-events: none;
+}
+/* K0 row ticks: the throughline's rest row, marked on both screen edges */
+.rowTick {
+  position: absolute;
+  top: 50%;
+  width: 8px;
+  height: 1px;
+  background: var(--line-strong);
+  z-index: 5;
+}
+.rowTickL {
+  left: 0;
+}
+.rowTickR {
+  right: 0;
+}
+.line {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* release seam: the monitor's K0 row grows into a full-bleed hairline */
+.seam {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--mon-y, 50%);
+  height: 1px;
+  margin-top: -0.5px;
+  z-index: 9;
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: var(--mon-cx, 50%) 50%;
+}
+
+/* ---------------------------------------------------------------- transitions */
+.panels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+.barPanel {
+  position: absolute;
+  inset: 0;
+  background: var(--ink-950);
+  transform: translate3d(-101%, 0, 0);
+  will-change: transform;
+}
+.gate {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--signal);
+  box-shadow: 0 0 24px rgba(34, 211, 238, 0.55);
+  opacity: 0;
+}
+.gateLead {
+  right: -1px;
+}
+.gateTrail {
+  left: -1px;
+}
+.blind {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: var(--ink-950);
+  transform: scaleY(0);
+  transform-origin: 50% 0;
+}
+.irisRing {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* ---------------------------------------------------------------- stacked layout */
+.card {
+  position: relative;
+}
+.stackNumeral {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: clamp(3rem, 8vw, 5.5rem);
+  line-height: 0.85;
+  letter-spacing: -0.04em;
+  font-weight: 300;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--line-strong);
+  user-select: none;
+}
+.stackMonitor {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  width: 100%;
+}
+.thumb {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  width: 38%;
+  opacity: 0.6;
+}
+@media (min-width: 768px) {
+  .thumbWrap {
+    flex: 0 0 38%;
+  }
+  .thumbWrap .thumb {
+    width: 100%;
+  }
+}
+@media (forced-colors: active) {
+  .trackFill,
+  .gate {
+    box-shadow: none;
+  }
+  .numeral,
+  .stackNumeral {
+    -webkit-text-stroke: 0;
+    color: CanvasText;
+  }
+}

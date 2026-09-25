@@ -108,7 +108,7 @@ export function ScrambleText({ text, className, trigger = "view", delay = 0, dur
       className={cn("scramble font-mono", className)}
       data-reveal={trigger === "view" ? "custom" : undefined}
     >
-      <span className="sr-only">{text}</span>
+      <span className="sr-only select-none">{text}</span>
       <span aria-hidden="true" ref={visRef} dangerouslySetInnerHTML={{ __html: escapeHtml(text) }} />
     </span>
   )

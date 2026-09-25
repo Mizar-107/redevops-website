@@ -61,7 +61,7 @@ export function SplitText({
 
   return (
     <Tag id={id} className={cn("split", mode === "wipe" && "split-wipe", className)} style={rootStyle} {...attrs}>
-      <span className="sr-only">{text}</span>
+      <span className="sr-only select-none">{text}</span>
       {mode === "wipe" ? (
         <span aria-hidden="true" className="wipe-host">
           <span className="wipe-clip">{visual}</span>

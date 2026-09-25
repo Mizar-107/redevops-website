@@ -1,40 +1,84 @@
 import { LogoMark } from "@/components/header/logo-mark"
 import { MotionToggle } from "@/components/motion/motion-toggle"
+import { CtaLink } from "@/components/motion/cta-link"
+import { Slate } from "@/components/motion/slate"
 import { NAV } from "@/lib/sections"
-import { CONTACT_EMAIL, CONTACT_MAILTO } from "@/lib/contact"
+import { CALENDLY_URL, CONTACT_EMAIL, CONTACT_MAILTO, PRIMARY_CTA_LABEL } from "@/lib/contact"
+import { cn } from "@/lib/utils"
+import s from "@/components/final/final.module.css"
+import { CreditsCrawl } from "./credits-crawl"
+import { EndTimecode } from "./end-timecode"
 
-/** STUB (owned by W9). */
+/**
+ * END CREDITS. A server component: the crawl, the timecode, the toggle and the CTAs are small client
+ * islands; everything else (and the copyright year) is rendered on the server.
+ */
 export function Footer() {
+  const year = new Date().getFullYear()
   return (
-    <footer id="credits" className="border-t border-line bg-ink-950">
-      <div className="shell py-12">
-        <div className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
-          <div className="max-w-sm space-y-3">
-            <div className="flex items-center gap-2.5 font-semibold">
-              <LogoMark />
-              <span>
-                Re<span className="text-signal">Dev</span>Ops
-              </span>
-            </div>
-            <p className="text-sm text-paper-dim">
-              Hands-on DevOps consulting by Recep — cloud cost, reliability, and delivery for growing product teams.
-            </p>
-          </div>
-          <nav className="flex flex-wrap gap-x-6 gap-y-2" aria-label="Footer">
-            {NAV.map((l) => (
-              <a key={l.href} href={l.href} className="text-sm text-paper-dim hover:text-signal">
-                {l.label}
+    <footer id="credits" aria-labelledby="credits-title" className="relative bg-ink-950 pt-16 md:pt-20">
+      <h2 id="credits-title" className="sr-only">
+        Credits
+      </h2>
+
+      <CreditsCrawl />
+
+      {/* post-credits: static, after the roll */}
+      <div className="shell flex flex-col items-center gap-4 pb-20 pt-10 text-center md:pb-24">
+        <Slate section="credits" label="POST-CREDITS" cut={null} align="center" className={cn("w-full max-w-md", s.slateFit)} />
+        <CtaLink href={CALENDLY_URL} variant="ghost" size="lg" external icon="arrow">
+          Still here? {PRIMARY_CTA_LABEL}
+        </CtaLink>
+      </div>
+
+      {/* utility footer: always static */}
+      <div className="border-t border-line">
+        <div className="shell pb-8 pt-12">
+          <div className="grid gap-10 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] lg:grid-cols-[minmax(0,1.4fr)_auto_auto] lg:gap-16">
+            <div className="max-w-sm">
+              <a href="#home" className="lm-host inline-flex min-h-[44px] items-center gap-2.5 font-semibold tracking-[-0.02em] text-paper">
+                <LogoMark />
+                <span>
+                  Re<span className="text-signal">Dev</span>Ops
+                </span>
               </a>
-            ))}
-          </nav>
-          <a href={CONTACT_MAILTO} className="text-sm text-paper-dim hover:text-signal">
-            {CONTACT_EMAIL}
-          </a>
-        </div>
-        <div className="mt-8 flex flex-col gap-3 border-t border-line pt-6 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-paper-mute">&copy; {new Date().getFullYear()} ReDevOps. All rights reserved.</p>
-          <p className="text-xs text-paper-mute">Built for clarity — no fake logos, no invented metrics.</p>
-          <MotionToggle variant="inline" />
+              <p className="mt-3 text-sm leading-relaxed text-paper-dim">
+                Hands-on DevOps consulting by Recep — cloud cost, reliability, and delivery for growing product teams.
+              </p>
+            </div>
+
+            <nav aria-label="Footer">
+              <ul className="grid grid-cols-2 gap-x-8 sm:flex sm:flex-wrap sm:gap-x-7 lg:grid lg:grid-cols-1 lg:gap-0">
+                {NAV.map((l) => (
+                  <li key={l.href}>
+                    <a href={l.href} className={cn("text-sm", s.navLink)}>
+                      <span aria-hidden="true" className="font-mono text-hud text-paper-mute">
+                        {l.reel}
+                      </span>
+                      <span className={s.navText}>{l.label}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+
+            <div className="flex flex-col items-start gap-1">
+              <span className="font-mono text-hud uppercase text-paper-mute">Email</span>
+              <a href={CONTACT_MAILTO} className={cn("text-sm", s.navLink)}>
+                <span className={s.navText}>{CONTACT_EMAIL}</span>
+              </a>
+              <MotionToggle variant="inline" className="-ml-px" />
+            </div>
+          </div>
+
+          <div className="mt-10 flex flex-col gap-2 border-t border-line pt-6 text-xs text-paper-mute md:flex-row md:items-center md:gap-3">
+            <p>&copy; {year} ReDevOps. All rights reserved.</p>
+            <span aria-hidden="true" className="hidden md:inline">
+              ·
+            </span>
+            <p>Built for clarity — no fake logos, no invented metrics.</p>
+            <EndTimecode className="mt-3 md:ml-auto md:mt-0" />
+          </div>
         </div>
       </div>
     </footer>

@@ -1,0 +1,370 @@
+/* =====================================================================================
+   COLD OPEN (W1). CSS only; no JS. Every time below comes from lib/motion/tokens.ts COLD_OPEN,
+   written inline on .root / .skip as --co-* custom properties. ms from first paint:
+
+     0–375      slate types in, line by line (clip steps(8), f3 each, 2f stagger)
+     120–520    the hairline draws from the centre outward (title)
+     480–800    a blip runs the line left → right (linear)
+     700–1100   the black halves part to a 2.39:1 letterbox (iris); the hairline fades f6 (exit).
+                The hairline row IS the hero horizon/streak row: match cut.
+     1100–1280  hold (hero t0 = 700ms, so its slate and line 1 are already rising in the window)
+     1280–1447  bars exit off-screen (exit, f4); slate and skip button fade (f4)
+     1450       overlay + skip button reach visibility:hidden through fill-mode (no JS needed)
+
+   html[data-intro="skip"] (any key / pointer / wheel / touch, set by the boot script): every beat
+   freezes where it is, then one f4 exit — bars leave through their outer edges, type fades — and
+   the overlay and button are hidden.
+   ===================================================================================== */
+
+/* visibility contract: only a first, motion-full, hash-less visit in the session plays it */
+.root,
+.skip {
+  display: none;
+}
+html[data-intro="play"] .root,
+html[data-intro="skip"] .root {
+  display: block;
+}
+html[data-intro="play"] .skip,
+html[data-intro="skip"] .skip {
+  display: inline-flex;
+}
+
+.root {
+  /* Geometry. The seam is the hairline row (= the hero horizon row on md+). The window the halves
+     open is 2.39:1, i.e. each bar keeps max(6vh, (H − W/2.39) / 2) when the seam is centred.
+     --co-seam is an optional integration hook (unset = the centre row): only the seam row has to
+     change to re-aim the match cut, e.g. at the mobile hero horizon. */
+  --seam: var(--co-seam, 50vh);
+  --win-half: calc(min(88vh, 100vw / 2.39) / 2);
+  /* the parked blip / exiting bars never add scrollable overflow */
+  overflow: clip;
+  animation: coOff 1ms linear var(--co-off-at) forwards;
+}
+@supports (container-type: size) {
+  /* measure the overlay box itself (no scrollbar / mobile toolbar mismatch) */
+  .root {
+    container-type: size;
+    --seam: var(--co-seam, 50cqh);
+    --win-half: calc(min(88cqh, 100cqw / 2.39) / 2);
+  }
+}
+
+/* ---------------------------------------------------------------- the two halves */
+/* Outer .bar = skip layer, inner .fill = the timeline, so a skip can move a half from wherever it is. */
+.bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+/* the halves overlap by 2px at the seam, so the hero's streak row can never leak through */
+.barTop {
+  top: 0;
+  height: calc(var(--seam) + 1px);
+}
+.barBot {
+  top: calc(var(--seam) - 1px);
+  bottom: 0;
+}
+.fill {
+  position: absolute;
+  inset: 0;
+  background: var(--ink-950);
+}
+.barTop .fill {
+  animation:
+    coPartTop var(--co-part-dur) var(--ease-iris) var(--co-part-at) both,
+    coExitTop var(--f4) var(--ease-exit) var(--co-exit-at) forwards;
+}
+.barBot .fill {
+  animation:
+    coPartBot var(--co-part-dur) var(--ease-iris) var(--co-part-at) both,
+    coExitBot var(--f4) var(--ease-exit) var(--co-exit-at) forwards;
+}
+
+/* ---------------------------------------------------------------- light + type */
+.fx {
+  position: absolute;
+  inset: 0;
+}
+
+/* the Throughline is born here: 1px .hairline on the seam, drawn from the centre */
+.line {
+  position: absolute;
+  left: 0;
+  top: var(--seam);
+  animation:
+    coDraw var(--co-line-dur) var(--ease-title) var(--co-line-at) both,
+    coFadeOut var(--f6) var(--ease-exit) var(--co-part-at) forwards;
+}
+
+/* the blip: an 80px hot head (plus a short trail so 90px/frame reads as one stroke, not dashes) */
+.blip {
+  position: absolute;
+  left: 0;
+  top: var(--seam);
+  width: 320px;
+  height: 11px;
+  margin-top: -5px;
+  transform: translate3d(calc(-100% - 64px), 0, 0);
+  animation: coBlip var(--co-blip-dur) linear var(--co-blip-at) both;
+}
+.blipTrail {
+  position: absolute;
+  top: 5px;
+  right: 40px;
+  width: 280px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.35) 55%, rgba(124, 244, 255, 0.9));
+}
+.blipHead {
+  position: absolute;
+  top: 4px;
+  right: 0;
+  width: 80px;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, transparent, var(--signal-hot) 50%, transparent);
+}
+.blipHead::before,
+.blipHead::after {
+  /* static glow; only the parent's transform animates */
+  content: "";
+  position: absolute;
+}
+.blipHead::before {
+  /* stretched horizontally: the same anamorphic language as the hero streak it hands off to */
+  inset: -9px -56px;
+  background: radial-gradient(closest-side, rgba(124, 244, 255, 0.5), rgba(34, 211, 238, 0.12) 55%, transparent);
+}
+.blipHead::after {
+  /* the white-hot 1px core at the centre of the head */
+  left: 24px;
+  right: 24px;
+  top: 1px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #e9fdff 50%, transparent);
+}
+
+/* film-leader slate, top-left on the page grid (aligns with the header logo) */
+.slate {
+  position: absolute;
+  top: 24px;
+  left: max(var(--pad), calc((100% - var(--maxw)) / 2));
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  font-size: 0.6875rem;
+  line-height: 1.2;
+  letter-spacing: 0.18em;
+  font-weight: 500;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--paper-mute);
+  animation: coFadeOut var(--f4) var(--ease-exit) var(--co-exit-at) forwards;
+}
+.slateLine {
+  display: block;
+  width: max-content;
+  animation: coType var(--f3) steps(8, end) 0ms both;
+}
+.slateLine:nth-child(2) {
+  animation-delay: var(--f2);
+}
+.slateLine:nth-child(3) {
+  animation-delay: calc(2 * var(--f2));
+}
+.slateLine:nth-child(4) {
+  animation-delay: calc(3 * var(--f2));
+}
+.slateVal {
+  color: var(--paper-dim);
+}
+
+/* ---------------------------------------------------------------- skip button (outside aria-hidden) */
+/* Outer button = skip layer + visibility; inner pill = the timeline fade. */
+.skip {
+  align-items: stretch;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  animation: coOff 1ms linear var(--co-off-at) forwards;
+}
+.skipPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0 0.5rem 0 1rem;
+  border: 1px solid var(--line);
+  border-radius: inherit;
+  background: rgba(5, 6, 10, 0.72);
+  color: var(--paper-dim);
+  font-size: 0.625rem;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  font-weight: 500;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition:
+    color 150ms linear,
+    border-color 150ms linear;
+  animation:
+    coFadeIn var(--f6) var(--ease-title) var(--co-line-at) both,
+    coFadeOut var(--f4) var(--ease-exit) var(--co-exit-at) forwards;
+}
+.skipArrow {
+  color: var(--signal);
+  font-size: 0.6875rem;
+  letter-spacing: 0;
+}
+.kbd {
+  font: inherit;
+  letter-spacing: 0.1em;
+  padding: 5px 7px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--paper-mute);
+}
+@media (hover: hover) and (pointer: fine) {
+  .skip:hover .skipPill {
+    color: var(--paper);
+    border-color: var(--line-strong);
+  }
+}
+
+/* ---------------------------------------------------------------- skip: freeze, then one short exit */
+html[data-intro="skip"] .fill,
+html[data-intro="skip"] .fx *,
+html[data-intro="skip"] .skipPill {
+  animation-play-state: paused;
+}
+html[data-intro="skip"] .barTop {
+  animation: coSkipTop var(--co-skip) var(--ease-exit) forwards;
+}
+html[data-intro="skip"] .barBot {
+  animation: coSkipBot var(--co-skip) var(--ease-exit) forwards;
+}
+html[data-intro="skip"] .fx {
+  animation: coFadeOut var(--co-skip) var(--ease-exit) forwards;
+}
+/* existing animations are matched by name and keep their clocks; the skip ones start now */
+html[data-intro="skip"] .root {
+  animation:
+    coOff 1ms linear var(--co-off-at) forwards,
+    coOffSkip 1ms linear var(--co-skip) forwards;
+}
+html[data-intro="skip"] .skip {
+  animation:
+    coOff 1ms linear var(--co-off-at) forwards,
+    coFadeOut var(--co-skip) var(--ease-exit) forwards,
+    coOffSkip 1ms linear var(--co-skip) forwards;
+}
+
+/* decorative: never under forced colours or in print */
+@media (forced-colors: active) {
+  .root,
+  .skip {
+    display: none !important;
+  }
+}
+@media print {
+  .root,
+  .skip {
+    display: none !important;
+  }
+}
+
+/* ---------------------------------------------------------------- keyframes */
+@keyframes coType {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes coDraw {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes coBlip {
+  /* parked 64px past each edge, so the head's glow never peeks in before or after the run */
+  from {
+    transform: translate3d(calc(-100% - 64px), 0, 0);
+  }
+  to {
+    transform: translate3d(100vw, 0, 0);
+  }
+}
+@keyframes coPartTop {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, calc(-1 * var(--win-half) - 1px), 0);
+  }
+}
+@keyframes coPartBot {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, calc(var(--win-half) + 1px), 0);
+  }
+}
+@keyframes coExitTop {
+  from {
+    transform: translate3d(0, calc(-1 * var(--win-half) - 1px), 0);
+  }
+  to {
+    transform: translate3d(0, -100%, 0);
+  }
+}
+@keyframes coExitBot {
+  from {
+    transform: translate3d(0, calc(var(--win-half) + 1px), 0);
+  }
+  to {
+    transform: translate3d(0, 100%, 0);
+  }
+}
+@keyframes coSkipTop {
+  to {
+    transform: translate3d(0, -100%, 0);
+  }
+}
+@keyframes coSkipBot {
+  to {
+    transform: translate3d(0, 100%, 0);
+  }
+}
+@keyframes coFadeIn {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes coFadeOut {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes coOff {
+  from,
+  to {
+    visibility: hidden;
+  }
+}
+@keyframes coOffSkip {
+  from,
+  to {
+    visibility: hidden;
+  }
+}

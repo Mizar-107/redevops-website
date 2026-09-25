@@ -1,0 +1,758 @@
+/* =====================================================================================
+   REEL 03 · OUTCOMES (W6)
+   Hidden starting states apply ONLY under html[data-ready][data-motion="full"] and before the
+   element's own reveal; SSR, no-JS, reduced motion and data-inview="instant" all render the final
+   frame. Only transform / opacity / clip-path animate (plus the single blur on "better").
+   ===================================================================================== */
+
+/* ---------------------------------------------------------------- 1 · notice card */
+.notice {
+  position: relative;
+}
+.noticeRuleSoft {
+  opacity: 0.45;
+}
+.track {
+  display: inline-block;
+  white-space: nowrap;
+}
+.ch {
+  display: inline-block;
+}
+.noticeLabel {
+  letter-spacing: 0.22em;
+}
+
+html[data-ready][data-motion="full"] .notice:not([data-inview]) .noticeRule {
+  transform: scaleX(0);
+}
+html[data-ready][data-motion="full"] .notice:not([data-inview]) .ch {
+  opacity: 0;
+  transform: translateX(calc(var(--o) * 0.35em));
+}
+html[data-ready][data-motion="full"] .notice:not([data-inview]) .noticeText {
+  opacity: 0;
+}
+.notice[data-inview="1"] .noticeRule {
+  transition: transform var(--f18) var(--ease-cut) var(--at, 0ms);
+}
+.notice[data-inview="1"] .ch {
+  transition:
+    transform var(--f12) var(--ease-title) var(--f9),
+    opacity var(--f6) linear var(--f9);
+}
+.notice[data-inview="1"] .noticeText {
+  transition: opacity var(--f12) linear var(--at, 0ms);
+}
+
+/* ---------------------------------------------------------------- 2 · H2 rack focus on "better"
+   One word, once: it rises blurred with the line, holds, and pulls focus 250ms after the line
+   lands. The only filter animation on the page; skipped under still: and when already in view. */
+html[data-ready][data-motion="full"] .rack:not([data-inview]) :global(.w):nth-of-type(2) {
+  filter: blur(6px);
+  opacity: 0.35;
+}
+.rack[data-inview="1"] :global(.w):nth-of-type(2) {
+  transition:
+    filter var(--f18) var(--ease-title) var(--rack, 1400ms),
+    opacity var(--f18) linear var(--rack, 1400ms);
+}
+
+/* ---------------------------------------------------------------- 3 · telemetry scope */
+.scopePanel {
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color var(--f6) var(--ease-ui);
+}
+@media (hover: hover) and (pointer: fine) {
+  .scopePanel {
+    cursor: ew-resize;
+  }
+}
+.scopePanel:has(.scopeRange:focus-visible) {
+  border-color: rgba(34, 211, 238, 0.45);
+}
+.scopeScreen {
+  isolation: isolate;
+  background:
+    radial-gradient(120% 90% at 50% 45%, rgba(14, 18, 27, 0.9), rgba(5, 6, 10, 0.9) 100%),
+    var(--ink-900);
+}
+.scopeScreen::after {
+  /* phosphor falloff at the glass edge */
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(130% 110% at 50% 50%, transparent 62%, rgba(5, 6, 10, 0.55));
+}
+.scopeLayer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block;
+  max-width: none;
+}
+.scopeWindow {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  will-change: transform;
+}
+.scopeWindow > .scopeLayer,
+.scopeWindowStatic > .scopeLayer {
+  will-change: transform;
+}
+.scopeWindowStatic {
+  position: absolute;
+  inset: 0;
+}
+
+/* graticule */
+.gridV {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1;
+  opacity: 0.7;
+}
+.gridDiv {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  stroke-dasharray: 2 5;
+}
+.gridTick {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 1;
+}
+
+/* tuned (left of the scanline) */
+.tFill {
+  fill: var(--signal);
+  fill-opacity: 0.08;
+}
+.tProv {
+  fill: none;
+  stroke: var(--signal);
+  stroke-width: 1;
+}
+.tBase {
+  fill: none;
+  stroke: var(--signal);
+  stroke-width: 1;
+  opacity: 0.45;
+}
+.tAlert {
+  fill: none;
+  stroke: var(--signal);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+.tAlertHead {
+  fill: var(--signal);
+}
+.tGo {
+  fill: none;
+  stroke: var(--go);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+.tLink {
+  fill: none;
+  stroke: var(--signal);
+  stroke-width: 1.25;
+  stroke-linejoin: round;
+  opacity: 0.85;
+}
+.tDots {
+  fill: var(--signal);
+}
+
+/* untuned (right of the scanline) */
+.uHatchLine {
+  stroke: var(--tungsten);
+  stroke-width: 1.25;
+}
+.uHatch {
+  opacity: 0.35;
+}
+.uProv {
+  fill: none;
+  stroke: var(--tungsten);
+  stroke-width: 1.5;
+  stroke-linejoin: miter;
+}
+.uBase {
+  fill: none;
+  stroke: var(--tungsten);
+  stroke-width: 1;
+  opacity: 0.5;
+}
+.uSpike {
+  fill: none;
+  stroke: var(--tungsten);
+  stroke-width: 1.25;
+  opacity: 0.85;
+}
+.uSpikeAlarm {
+  fill: none;
+  stroke: var(--alarm);
+  stroke-width: 1.5;
+}
+.uBar {
+  fill: rgba(255, 181, 71, 0.16);
+  stroke: var(--tungsten);
+  stroke-width: 1;
+}
+.uBarAlarm {
+  fill: rgba(255, 77, 94, 0.14);
+  stroke: var(--alarm);
+  stroke-width: 1;
+}
+.uX {
+  fill: none;
+  stroke: var(--alarm);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+.uDots {
+  fill: var(--paper-mute);
+}
+
+/* shared */
+.cUsage {
+  fill: none;
+  stroke: var(--paper-dim);
+  stroke-width: 1.25;
+  stroke-linejoin: round;
+  opacity: 0.9;
+}
+
+/* lane labels + crop-mark corner ticks */
+.laneLabel {
+  position: absolute;
+  left: 22px;
+  z-index: 3;
+  padding: 2px 5px;
+  border-radius: 4px;
+  color: var(--paper-mute);
+  background: rgba(10, 13, 20, 0.78);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.corner {
+  position: absolute;
+  z-index: 3;
+  width: 8px;
+  height: 8px;
+  border: 0 solid var(--line-strong);
+  pointer-events: none;
+}
+.cornerTl {
+  top: 8px;
+  left: 8px;
+  border-top-width: 1px;
+  border-left-width: 1px;
+}
+.cornerTr {
+  top: 8px;
+  right: 8px;
+  border-top-width: 1px;
+  border-right-width: 1px;
+}
+.cornerBl {
+  bottom: 8px;
+  left: 8px;
+  border-bottom-width: 1px;
+  border-left-width: 1px;
+}
+.cornerBr {
+  bottom: 8px;
+  right: 8px;
+  border-bottom-width: 1px;
+  border-right-width: 1px;
+}
+
+/* keyboard control: spans the panel, visually transparent; pointers are handled by the panel */
+.scopeRange {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  pointer-events: none;
+  cursor: inherit;
+}
+.scopeRange::-webkit-slider-runnable-track {
+  background: transparent;
+  border: 0;
+}
+.scopeRange::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1px;
+  height: 1px;
+  background: transparent;
+  border: 0;
+}
+.scopeRange::-moz-range-track {
+  background: transparent;
+  border: 0;
+}
+.scopeRange::-moz-range-thumb {
+  width: 1px;
+  height: 1px;
+  background: transparent;
+  border: 0;
+}
+/* the focus ring moves to the scanline handle (an outline here would be clipped by the glass) */
+.scopeRange:focus-visible {
+  outline: none !important;
+}
+
+/* the scanline */
+.scan {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  will-change: transform;
+}
+.scanBeam {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 100%;
+  width: 160px;
+  background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.08));
+}
+.scanBar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -1px;
+  width: 2px;
+  background: var(--signal);
+  box-shadow: 0 0 24px rgba(34, 211, 238, 0.55);
+}
+.scanHandle {
+  position: absolute;
+  left: -7px;
+  top: calc(50% - 7px);
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--ink-950);
+  border: 2px solid var(--signal);
+  box-shadow: 0 0 16px rgba(34, 211, 238, 0.6);
+}
+.scanHandle::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 999px;
+  background: var(--signal-hot);
+}
+.hvf {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border: 0 solid var(--signal);
+  opacity: 0;
+  transition:
+    opacity var(--f6) var(--ease-title),
+    transform var(--f6) var(--ease-title);
+}
+.hvfTl {
+  top: -10px;
+  left: -10px;
+  border-top-width: 1px;
+  border-left-width: 1px;
+  transform: translate(-4px, -4px);
+}
+.hvfTr {
+  top: -10px;
+  right: -10px;
+  border-top-width: 1px;
+  border-right-width: 1px;
+  transform: translate(4px, -4px);
+}
+.hvfBl {
+  bottom: -10px;
+  left: -10px;
+  border-bottom-width: 1px;
+  border-left-width: 1px;
+  transform: translate(-4px, 4px);
+}
+.hvfBr {
+  bottom: -10px;
+  right: -10px;
+  border-bottom-width: 1px;
+  border-right-width: 1px;
+  transform: translate(4px, 4px);
+}
+.scopeRange:focus-visible ~ .scan .scanHandle {
+  outline: 2px solid var(--signal);
+  outline-offset: 3px;
+}
+.scopeRange:focus-visible ~ .scan .hvf {
+  opacity: 1;
+  transform: none;
+}
+.chips {
+  position: absolute;
+  inset: 0;
+}
+.chip {
+  position: absolute;
+  top: calc(50% - 10px);
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 7px;
+  border-radius: 5px;
+  white-space: nowrap;
+  background: rgba(5, 6, 10, 0.86);
+  border: 1px solid var(--line-strong);
+  transition: opacity var(--f6) var(--ease-ui);
+}
+.chipL {
+  right: calc(100% + 16px);
+  color: var(--signal);
+}
+.chipR {
+  left: 16px;
+  color: var(--tungsten);
+}
+.scan[data-hide-l] .chipL,
+.scan[data-hide-r] .chipR {
+  opacity: 0;
+}
+
+/* power-on: the incoming rule draws across the dark glass, the screen opens from it (iris),
+   then the scanline drops in and its handle claps. */
+.powerLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(50% - 0.5px);
+  z-index: 5;
+  opacity: 0;
+}
+html[data-ready][data-motion="full"] .scopePanel:not([data-inview]) .powerLine {
+  opacity: 1;
+  transform: scaleX(0);
+}
+html[data-ready][data-motion="full"] .scopePanel:not([data-inview]) .scopeScreen {
+  clip-path: inset(calc(50% - 1px) 0 calc(50% - 1px) 0);
+}
+html[data-ready][data-motion="full"] .scopePanel:not([data-inview]) .scanBar {
+  transform: scaleY(0);
+}
+html[data-ready][data-motion="full"] .scopePanel:not([data-inview]) .scanHandle {
+  opacity: 0;
+  transform: scale(0);
+}
+html[data-ready][data-motion="full"] .scopePanel:not([data-inview]) .scanBeam {
+  opacity: 0;
+}
+html[data-ready][data-motion="full"] .scopePanel:not([data-inview]) .chips {
+  opacity: 0;
+}
+.scopePanel[data-inview="1"] .powerLine {
+  animation: scope-power var(--f24) linear both;
+}
+.scopePanel[data-inview="1"] .scopeScreen {
+  clip-path: inset(0 0 0 0);
+  transition: clip-path var(--f18) var(--ease-iris) var(--f9);
+}
+.scopePanel[data-inview="1"] .scanBar {
+  transition: transform var(--f9) var(--ease-cut) var(--f24);
+}
+.scopePanel[data-inview="1"] .scanBeam {
+  transition: opacity var(--f12) linear calc(var(--f24) + var(--f6));
+}
+.scopePanel[data-inview="1"] .scanHandle {
+  transition:
+    transform var(--f9) var(--spring-clap) calc(var(--f24) + var(--f6)),
+    opacity var(--f2) linear calc(var(--f24) + var(--f6));
+}
+.scopePanel[data-inview="1"] .chips {
+  transition: opacity var(--f6) linear calc(var(--f36));
+}
+@keyframes scope-power {
+  0% {
+    opacity: 1;
+    transform: scaleX(0);
+    animation-timing-function: var(--ease-cut);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+  75% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scaleX(1);
+  }
+}
+
+/* ---------------------------------------------------------------- 4 · lower-thirds */
+.lt {
+  --k: 0;
+  --t0: calc(var(--k) * var(--f4));
+}
+@media (min-width: 640px) {
+  .lt:nth-child(2n) {
+    --k: 1;
+  }
+}
+@media (min-width: 1024px) {
+  .lt:nth-child(4n + 1) {
+    --k: 0;
+  }
+  .lt:nth-child(4n + 2) {
+    --k: 1;
+  }
+  .lt:nth-child(4n + 3) {
+    --k: 2;
+  }
+  .lt:nth-child(4n) {
+    --k: 3;
+  }
+}
+.ltMatte {
+  overflow: clip;
+  padding-bottom: 8px;
+  transition: transform var(--f6) var(--ease-title);
+}
+.ltTitle {
+  display: block;
+}
+@media (hover: hover) and (pointer: fine) {
+  .lt:hover .ltMatte {
+    transform: translateX(2px);
+  }
+}
+.ltBar {
+  position: relative;
+  display: block;
+  height: 18px;
+}
+.ltTag {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding-left: 32px;
+  white-space: nowrap;
+}
+.ltTagUnder {
+  color: var(--signal);
+}
+.ltBarClip {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background: var(--signal);
+  color: var(--ink-950);
+  clip-path: inset(0 calc(100% - 24px) 0 0);
+}
+.ltBarClip .ltTag {
+  font-weight: 600;
+}
+.ltLineWrap {
+  display: block;
+  height: 1px;
+  margin-top: 5px;
+  overflow: clip;
+}
+.ltLine {
+  display: block;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(34, 211, 238, 0.55), rgba(34, 211, 238, 0.12));
+}
+html[data-motion="full"] .ltIcon > * {
+  stroke-dasharray: 64;
+}
+html[data-ready][data-motion="full"] .lt:not([data-inview]) .ltIcon > * {
+  stroke-dashoffset: 64;
+}
+html[data-ready][data-motion="full"] .lt:not([data-inview]) .ltBarClip {
+  clip-path: inset(0 100% 0 0);
+}
+html[data-ready][data-motion="full"] .lt:not([data-inview]) .ltTagUnder {
+  opacity: 0;
+}
+html[data-ready][data-motion="full"] .lt:not([data-inview]) .ltTitle {
+  transform: translateY(calc(100% + 8px));
+}
+html[data-ready][data-motion="full"] .lt:not([data-inview]) .ltLine {
+  transform: translateX(-101%);
+}
+html[data-ready][data-motion="full"] .lt:not([data-inview]) .ltDesc {
+  opacity: 0;
+}
+.lt[data-inview="1"] .ltIcon > * {
+  transition: stroke-dashoffset var(--f18) var(--ease-title) var(--t0);
+}
+/* bar: wipe in f9 cut · hold · retract to a 24px stub f6 cut at f21 (= f6 after the text lands) */
+.lt[data-inview="1"] .ltBarClip {
+  animation: lt-bar calc(var(--f9) + var(--f12) + var(--f6)) linear var(--t0) both;
+}
+.lt[data-inview="1"] .ltTagUnder {
+  transition: opacity 0ms linear calc(var(--t0) + var(--f9) + var(--f12));
+}
+.lt[data-inview="1"] .ltTitle {
+  transition: transform var(--f12) var(--ease-title) calc(var(--t0) + var(--f3));
+}
+.lt[data-inview="1"] .ltLine {
+  transition: transform var(--f9) var(--ease-cut) calc(var(--t0) + var(--f6));
+}
+.lt[data-inview="1"] .ltDesc {
+  transition: opacity var(--f9) linear calc(var(--t0) + var(--f6));
+}
+@keyframes lt-bar {
+  0% {
+    clip-path: inset(0 100% 0 0);
+    animation-timing-function: var(--ease-cut);
+  }
+  33.333% {
+    clip-path: inset(0 0 0 0);
+  }
+  77.778% {
+    clip-path: inset(0 0 0 0);
+    animation-timing-function: var(--ease-cut);
+  }
+  100% {
+    clip-path: inset(0 calc(100% - 24px) 0 0);
+  }
+}
+
+/* ---------------------------------------------------------------- 5 · slated example cards */
+.slated {
+  --k: 0;
+  --t0: calc(var(--k) * var(--f4));
+}
+@media (min-width: 768px) {
+  .slated:nth-child(2) {
+    --k: 1;
+  }
+}
+.clapper {
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  right: -1px;
+  height: 14px;
+  pointer-events: none;
+}
+.stick {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px 12px 0 0;
+  background: repeating-linear-gradient(45deg, var(--paper) 0 10px, var(--ink-950) 10px 20px);
+  opacity: 0.85;
+  transform-origin: 0 100%;
+}
+.flash {
+  position: absolute;
+  inset: -1px;
+  border-radius: 12px;
+  border: 1px solid var(--signal);
+  box-shadow: inset 0 0 28px rgba(34, 211, 238, 0.12);
+  opacity: 0;
+  pointer-events: none;
+}
+html[data-ready][data-motion="full"] .slated:not([data-inview]) .stick {
+  transform: rotate(-10deg);
+}
+html[data-ready][data-motion="full"] .slated:not([data-inview]) :global(.wi) {
+  transform: translateY(110%);
+}
+html[data-ready][data-motion="full"] .slated:not([data-inview]) .slatedBody {
+  opacity: 0;
+}
+html[data-ready][data-motion="full"] .slated[data-inview] :global(.wi) {
+  transform: none;
+}
+.slated[data-inview="1"] .stick {
+  animation: slate-clap calc(var(--f2) + var(--f9)) linear var(--t0) both;
+}
+.slated[data-inview="1"] .flash {
+  /* impact: the spring first reaches 0° about f3 into the clap */
+  animation: slate-flash var(--f2) linear calc(var(--t0) + var(--f2) + var(--f3));
+}
+html[data-ready][data-motion="full"] .slated[data-inview="1"] :global(.wi) {
+  transition: transform var(--f18) var(--ease-title) calc(var(--t0) + var(--f6) + var(--wd, 0ms));
+}
+.slated[data-inview="1"] .slatedBody {
+  transition: opacity var(--f12) linear calc(var(--t0) + var(--f12));
+}
+@keyframes slate-clap {
+  0% {
+    transform: rotate(-10deg);
+    animation-timing-function: var(--ease-title);
+  }
+  18.182% {
+    transform: rotate(-14deg);
+    animation-timing-function: var(--spring-clap);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+@keyframes slate-flash {
+  from,
+  to {
+    opacity: 1;
+  }
+}
+
+/* ---------------------------------------------------------------- 6 · footnote bookend */
+.footClause {
+  color: var(--paper);
+}
+.caret {
+  display: inline-block;
+  margin-left: 0.15em;
+  color: var(--signal);
+  opacity: 0;
+}
+html[data-motion="full"] .foot[data-inview="1"] .caret {
+  /* after the clause decodes (≤ f14): three blinks, then gone for good */
+  animation: foot-caret var(--f12) steps(2, jump-none) calc(var(--f14) + var(--f3)) 3 both;
+}
+@keyframes foot-caret {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@media (forced-colors: active) {
+  .scanBar,
+  .scanHandle {
+    box-shadow: none;
+  }
+  .scanBeam,
+  .flash,
+  .scopeScreen::after {
+    display: none;
+  }
+}

@@ -139,6 +139,8 @@
     @apply border-border;
   }
   html {
+    /* positioned so framer's useScroll container (documentElement) measures offsets without warnings */
+    position: relative;
     scroll-padding-top: 80px;
     background: var(--ink-950);
     color-scheme: dark;
@@ -278,7 +280,7 @@
   white-space: nowrap;
 }
 .slate .slate-rule {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-width: 24px;
   max-width: 240px;
 }
@@ -767,6 +769,9 @@ html[data-ready][data-motion="full"] .cta-drawn[data-reveal]:not([data-inview]) 
 @keyframes rdo-gate {
   0% {
     transform: translateX(0);
+    opacity: 0;
+  }
+  4% {
     opacity: 1;
   }
   96% {

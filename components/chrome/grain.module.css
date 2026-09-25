@@ -1,0 +1,61 @@
+/* =====================================================================================
+   GRAIN (W1): one global fixed layer of film grain. §4.3.
+   · SVG feTurbulence tile (baseFrequency .85, 3 octaves, stitched) → feColorMatrix: neutral grey,
+     alpha from the noise. 256px tile, layer opacity .05, NO mix-blend-mode.
+   · z-index 45: above content, below the header (50) and the cold open (100).
+   · Motion: the whole layer jumps between 6 fixed offsets, 100ms each (600ms loop), transform only
+     (compositor). Each keyframe holds (step-end), so it is exactly 6 frames, never a slide.
+   · Static under still (no JS / reduced motion / MOTION off); gone under forced colours.
+   The layer overhangs the viewport by 128px per side (not the 200% of the spec text): the 6
+   offsets stay inside ±128px, so coverage is identical at roughly a third of the GPU texture.
+   ===================================================================================== */
+
+.grain {
+  position: fixed;
+  inset: -128px;
+  z-index: 45;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.64  0 0 0 0 0.64  0 0 0 0 0.64  2.2 0 0 0 -0.72'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url%28%23n%29'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+  background-repeat: repeat;
+  transform: translate3d(0, 0, 0);
+}
+
+html[data-motion="full"] .grain {
+  animation: grainJitter 600ms step-end infinite;
+}
+
+@media (forced-colors: active) {
+  .grain {
+    display: none;
+  }
+}
+@media print {
+  .grain {
+    display: none;
+  }
+}
+
+/* 6 fixed offsets, none a multiple of the 256px tile, so every frame is a different grain */
+@keyframes grainJitter {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  16.667% {
+    transform: translate3d(-83px, 61px, 0);
+  }
+  33.333% {
+    transform: translate3d(47px, -109px, 0);
+  }
+  50% {
+    transform: translate3d(-113px, -38px, 0);
+  }
+  66.667% {
+    transform: translate3d(101px, 89px, 0);
+  }
+  83.333% {
+    transform: translate3d(-29px, 118px, 0);
+  }
+}
