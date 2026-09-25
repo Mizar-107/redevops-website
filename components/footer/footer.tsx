@@ -7,30 +7,27 @@ import { CALENDLY_URL, CONTACT_EMAIL, CONTACT_MAILTO, PRIMARY_CTA_LABEL } from "
 import { cn } from "@/lib/utils"
 import s from "@/components/final/final.module.css"
 import { CreditsCrawl } from "./credits-crawl"
-import { EndTimecode } from "./end-timecode"
 
 /**
- * END CREDITS. A server component: the crawl, the timecode, the toggle and the CTAs are small client
- * islands; everything else (and the copyright year) is rendered on the server.
+ * Footer: the at-a-glance roll, a last booking prompt and the utility footer. A server component:
+ * the roll, the toggle and the CTAs are small client islands; everything else (and the copyright
+ * year) is rendered on the server.
  */
 export function Footer() {
   const year = new Date().getFullYear()
   return (
     <footer id="credits" aria-labelledby="credits-title" className="relative bg-ink-950 pt-16 md:pt-20">
       <h2 id="credits-title" className="sr-only">
-        Credits
+        At a glance
       </h2>
 
       <CreditsCrawl />
 
-      {/* post-credits: static, after the roll */}
+      {/* last booking prompt: static, after the roll */}
       <div className="shell flex flex-col items-center gap-4 pb-20 pt-16 text-center md:pb-24">
-        <Slate section="credits" label="POST-CREDITS" cut={null} align="center" className={cn("w-full max-w-md", s.slateFit)} />
-        {/* the label fits one line from ~352px. Below that it breaks on the phrase, "Still here? /
-            Book a free consultation →": the block span ends line 1 (so the label box shrinks to the
-            longer line and the arrow stays beside it) and non-breaking spaces keep each phrase whole */}
+        <Slate section="credits" label="STILL READING?" cut={null} align="center" className={cn("w-full max-w-md", s.slateFit)} />
         <CtaLink href={CALENDLY_URL} variant="ghost" size="lg" external icon="arrow" className="max-w-full">
-          <span className="max-[359px]:block">{"Still\u00A0here?"}</span> {PRIMARY_CTA_LABEL.replace(/ /g, "\u00A0")}
+          {PRIMARY_CTA_LABEL}
         </CtaLink>
       </div>
 
@@ -47,7 +44,7 @@ export function Footer() {
                 </span>
               </a>
               <p className="mt-3 text-sm leading-relaxed text-paper-dim">
-                Hands-on DevOps consulting by Recep — cloud cost, reliability, and delivery for growing product teams.
+                Hands-on DevOps consulting for growing product teams: cloud cost, reliability, and delivery.
               </p>
             </div>
 
@@ -59,7 +56,7 @@ export function Footer() {
                   <li key={l.href}>
                     <a href={l.href} className={cn("text-sm", s.navLink)}>
                       <span aria-hidden="true" className="font-mono text-hud text-paper-mute">
-                        {l.reel}
+                        {l.num}
                       </span>
                       <span className={s.navText}>{l.label}</span>
                     </a>
@@ -82,8 +79,10 @@ export function Footer() {
             <span aria-hidden="true" className="hidden text-paper-mute md:inline">
               ·
             </span>
-            <p>Built for clarity — no fake logos, no invented metrics.</p>
-            <EndTimecode className="mt-3 md:ml-auto md:mt-0" />
+            <p>Built for clarity.</p>
+            <a href="#home" className={cn("mt-3 md:ml-auto md:mt-0", s.navLink)}>
+              <span className={s.navText}>Back to top ↑</span>
+            </a>
           </div>
         </div>
       </div>

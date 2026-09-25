@@ -382,7 +382,7 @@ export function TelemetryScope({ className }: { className?: string }) {
         <Hairline draw="none" className={s.powerLine} />
       </div>
       <figcaption className="mt-3 text-right font-mono text-hud uppercase text-paper-dim">
-        Illustrative signals — not client data.
+        Illustrative signals, not client data.
       </figcaption>
     </figure>
   )

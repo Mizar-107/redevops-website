@@ -167,7 +167,7 @@ function NavLinks({ active, reduced }: { active: SectionId; reduced: boolean }) 
             >
               <a href={l.href} className="hdr-link" aria-current={current ? "location" : undefined}>
                 <span className="hdr-link-in">
-                  <span className="hdr-num" aria-hidden="true">{l.reel}</span>
+                  <span className="hdr-num" aria-hidden="true">{l.num}</span>
                   <span className="hdr-label">{l.label}</span>
                 </span>
               </a>

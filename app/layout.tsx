@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     template: "%s | ReDevOps",
   },
   description:
-    "ReDevOps helps growing product teams cut cloud waste, harden infrastructure, and ship with confidence. Hands-on DevOps consulting by Recep — AWS, GCP, Azure, CI/CD, and SRE.",
+    "ReDevOps helps growing product teams cut cloud waste, harden infrastructure, and ship with confidence. Hands-on DevOps consulting across AWS, GCP, Azure, CI/CD, and SRE.",
   keywords: [
     "DevOps consulting",
     "cloud cost optimization",
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     "Azure",
     "ReDevOps",
   ],
-  authors: [{ name: "Recep", url: SITE_URL }],
+  authors: [{ name: "ReDevOps", url: SITE_URL }],
   creator: "ReDevOps",
   openGraph: {
     type: "website",
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     siteName: "ReDevOps",
     title: "ReDevOps | DevOps Consulting for Cloud Cost & Reliability",
     description:
-      "Hands-on DevOps consulting that reduces cloud waste, improves reliability, and accelerates delivery — without disrupting your team.",
+      "Hands-on DevOps consulting that reduces cloud waste, improves reliability, and speeds up delivery, without disrupting your team.",
   },
   twitter: {
     card: "summary_large_image",
@@ -76,11 +76,6 @@ const jsonLd = {
     "Hands-on DevOps consulting for cloud cost optimization, infrastructure reliability, and CI/CD.",
   url: SITE_URL,
   email: CONTACT_EMAIL,
-  founder: {
-    "@type": "Person",
-    name: "Recep",
-    email: CONTACT_EMAIL,
-  },
   areaServed: "Worldwide",
   serviceType: ["DevOps consulting", "Cloud cost optimization", "SRE", "CI/CD"],
   potentialAction: {

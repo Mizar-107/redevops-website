@@ -1,10 +1,8 @@
 import { Handshake, Map, Search, type LucideIcon } from "lucide-react"
-import { formatTC } from "@/lib/motion/math"
 
 /**
- * REEL 04 · PROCESS — "The Edit". Three steps = three clips on an NLE timeline.
- * Titles and descriptions are verbatim from the previous section (the "1." prefixes moved into the
- * clip labels). Log lines are paraphrased only from that copy.
+ * 03 / PROCESS: the engagement plan. Three steps = three phase bars on a project timeline.
+ * Log lines are paraphrased only from the step copy.
  */
 
 export type StepIndex = 0 | 1 | 2
@@ -15,8 +13,10 @@ export type ProcessStep = {
   icon: LucideIcon
   title: string
   description: string
-  /** video track the clip sits on */
+  /** internal lane key */
   track: Track
+  /** lane name shown on the timeline */
+  lane: string
   /** clip in/out on the sequence, as a fraction of the timeline (0..1) */
   clip: readonly [number, number]
   /** two run-log lines typed into the program monitor */
@@ -29,37 +29,39 @@ export const STEPS: readonly ProcessStep[] = [
     icon: Search,
     title: "Discover & diagnose",
     description:
-      "A free 30-minute call to align on goals, then a focused review of spend, reliability signals, and delivery bottlenecks — so we fix the right problems first.",
+      "A free 30-minute call to align on goals, then a focused review of spend, reliability signals, and delivery bottlenecks. We fix the right problems first.",
     track: "V1",
+    lane: "DISCOVER",
     clip: [0, 0.38],
-    log: ["› discover — goals aligned on a free 30-minute call", "› diagnose — spend, reliability signals, delivery bottlenecks"],
+    log: ["› discover: goals aligned on a free 30-minute call", "› diagnose: spend, reliability signals, delivery bottlenecks"],
   },
   {
     index: 1,
     icon: Map,
     title: "Plan & implement",
     description:
-      "A clear, prioritized action plan with owners and sequencing. We implement alongside your team with minimal disruption to day-to-day product work.",
+      "A clear, prioritized plan with owners and sequencing. We implement alongside your team with minimal disruption to product work.",
     track: "V2",
+    lane: "BUILD",
     clip: [0.3, 0.72],
-    log: ["› plan — prioritized actions, owners, sequencing", "› implement — alongside your team, minimal disruption"],
+    log: ["› plan: prioritized actions, owners, sequencing", "› implement: alongside your team, minimal disruption"],
   },
   {
     index: 2,
     icon: Handshake,
     title: "Stabilize & hand over",
     description:
-      "Tune what we shipped, document how it works, and pair with your engineers so the gains stick long after the engagement ends.",
+      "We tune what we shipped, document how it works, and pair with your engineers so the gains stick after the engagement ends.",
     track: "V3",
+    lane: "HANDOVER",
     clip: [0.64, 1],
-    log: ["› stabilize — tune, document, pair with your engineers", "› hand over — gains that stick after the engagement"],
+    log: ["› stabilize: tune, document, pair with your engineers", "› hand over: gains that stick after the engagement"],
   },
 ]
 
 /** The line the run log ends on once the playhead reaches the end of the sequence. */
-export const END_LOG = "› render complete — ready for handover"
+export const END_LOG = "› all steps complete: ready for handover"
 
-/** Sequence length in frames (the timecode readout runs 00:00:00:00 → 00:01:30:00). */
 /**
  * Where the pinned edit plays: lg width AND at least 600px tall. Below that height the monitor
  * (bound to the space above the timeline) is too small to hold a step's title and description, so
@@ -67,7 +69,6 @@ export const END_LOG = "› render complete — ready for handover"
  */
 export const PIN_MQ = "(min-width: 1024px) and (min-height: 600px)"
 
-export const SEQ_FRAMES = 2160
 /** Major ruler ticks every 10% of the sequence. */
 export const RULER_MAJORS = 10
 
@@ -84,9 +85,15 @@ export const stepAt = (p: number): StepIndex => (p < 0.34 ? 0 : p < 0.68 ? 1 : 2
 export const pad2 = (n: number) => String(n).padStart(2, "0")
 /** "01 / 03" */
 export const stepCount = (i: number) => `${pad2(i + 1)} / ${pad2(STEPS.length)}`
-/** "CLIP 01 · V1" */
-export const clipLabel = (s: ProcessStep) => `CLIP ${pad2(s.index + 1)} · ${s.track}`
-/** Sequence timecode at a timeline fraction. */
-export const tcAt = (x: number) => formatTC(Math.round(x * SEQ_FRAMES))
+/** "STEP 01 · DISCOVER" */
+export const clipLabel = (s: ProcessStep) => `STEP ${pad2(s.index + 1)} · ${s.lane}`
+/** Plan progress as a mono bar ("■■■■□□□□□□□□") for a timeline fraction. No numbers, no timecode. */
+const BAR_CELLS = 12
+export const planBar = (x: number) => {
+  const n = Math.round(Math.min(1, Math.max(0, x)) * BAR_CELLS)
+  return "■".repeat(n) + "□".repeat(BAR_CELLS - n)
+}
+/** Ruler labels: only the ends are named. */
+export const rulerLabel = (i: number) => (i === 0 ? "KICKOFF" : i === RULER_MAJORS ? "HANDOVER" : "")
 /** "Jump to step 2: Plan & implement" */
 export const jumpLabel = (s: ProcessStep) => `Jump to step ${s.index + 1}: ${s.title}`

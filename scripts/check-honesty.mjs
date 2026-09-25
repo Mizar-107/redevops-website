@@ -79,7 +79,13 @@ const warnings = []
 
 function check(text, file, sf, node, ctx) {
   const t = text.replace(/\s+/g, " ").trim()
-  if (!t || !/\d/.test(t)) return
+  if (!t) return
+  if (/\u2014/.test(t)) {
+    const { line } = sf.getLineAndCharacterOfPosition(node.getStart(sf))
+    failures.push(`${file}:${line + 1}  [em dash (house style: use a colon, comma or full stop)] (${ctx}) ${JSON.stringify(t.slice(0, 140))}`)
+    return
+  }
+  if (!/\d/.test(t)) return
   const { line } = sf.getLineAndCharacterOfPosition(node.getStart(sf))
   const where = `${file}:${line + 1}`
   for (const f of FAIL) {
@@ -149,7 +155,7 @@ if (warnings.length) {
   for (const w of warnings) console.log("  warn  " + w)
 }
 if (failures.length) {
-  console.error(`\nhonesty: FAILED — ${failures.length} metric-like claim(s) in visible text:`)
+  console.error(`\nhonesty: FAILED: ${failures.length} problem(s) in visible text:`)
   for (const f of failures) console.error("  FAIL  " + f)
   process.exit(1)
 }

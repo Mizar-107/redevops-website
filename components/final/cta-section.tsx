@@ -95,7 +95,7 @@ export function CtaSection() {
             delay={120}
             className="mt-6 max-w-2xl text-lede text-paper-dim text-pretty [@media(min-width:640px)_and_(max-height:800px)]:mt-4 [@media(min-width:640px)_and_(max-height:800px)]:max-w-3xl"
           >
-            Tell us where it hurts — cost, reliability, or delivery. Your first consultation is free, and you will leave
+            Tell us where it hurts: cost, reliability, or delivery. The first consultation is free, and you'll leave
             with a concrete next step either way.
           </Reveal>
 

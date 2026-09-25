@@ -45,12 +45,6 @@
      the SSR / no-JS / no-WebGL frame is already on the throughline and nothing jumps later. */
   --hy0: calc(var(--header-h) + 10svh + 2.15rem + var(--slate-gap) + 0.92 * var(--l1-size));
 }
-@media (max-width: 348px) {
-  .hero {
-    /* the slate label wraps onto a second line here */
-    --hy0: calc(var(--header-h) + 10svh + 2.975rem + var(--slate-gap) + 0.92 * var(--l1-size));
-  }
-}
 @media (min-width: 768px) {
   .hero {
     --hy0: max(calc(var(--header-h) + 2.325rem + var(--slate-gap) + 0.92 * var(--l1-size)), 50svh);

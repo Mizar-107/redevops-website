@@ -3,13 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { cancelFrame, frame } from "framer-motion"
 import { cn } from "@/lib/utils"
-import { clamp, formatTC } from "@/lib/motion/math"
-import { reelLabel, section } from "@/lib/sections"
+import { clamp } from "@/lib/motion/math"
+import { sectionLabel, section } from "@/lib/sections"
 import { useScrub } from "@/hooks/use-scrub"
 import { useStickyGuard } from "@/hooks/use-sticky-guard"
 import { useReducedMotionSafe } from "@/hooks/use-motion-pref"
 import { ScrambleText } from "@/components/motion/scramble-text"
-import { END_OFF, END_ON, JUMP, PIN_MQ, SEQ_FRAMES, STEPS, clipLabel, stepAt, tcAt, type StepIndex } from "./process-data"
+import { END_OFF, END_ON, JUMP, PIN_MQ, STEPS, clipLabel, planBar, stepAt, type StepIndex } from "./process-data"
 import { ProgramMonitor } from "./program-monitor"
 import { Timeline, levelAt, type TimelineHandle } from "./timeline"
 import styles from "./process.module.css"
@@ -43,12 +43,12 @@ export function EditStage() {
 
     tlRef.current?.update(p)
 
-    const fr = Math.round(p * SEQ_FRAMES)
+    const fr = Math.round(p * 120)
     if (fr !== s.frame) {
       s.frame = fr
-      const tc = formatTC(fr)
-      if (monTcRef.current) monTcRef.current.textContent = tc
-      if (tlTcRef.current) tlTcRef.current.textContent = tc
+      const bar = planBar(p)
+      if (monTcRef.current) monTcRef.current.textContent = bar
+      if (tlTcRef.current) tlTcRef.current.textContent = bar
     }
 
     const l0 = levelAt(p, 0).toFixed(3)
@@ -143,32 +143,20 @@ export function EditStage() {
         <div className={cn("shell", styles.viewer)}>
           {/* inspector (xl): the clip under the playhead */}
           <div className={styles.inspector} aria-hidden="true">
-            <p className={styles.inspReel}>{reelLabel("process")}</p>
+            <p className={styles.inspReel}>{sectionLabel("process")}</p>
             <dl className={styles.insp}>
               <div className={styles.inspStatic}>
-                <dt>SEQUENCE</dt>
-                <dd>{meta.cut.toUpperCase()}</dd>
+                <dt>PLAN</dt>
+                <dd>FIRST CALL → HANDOVER</dd>
               </div>
               <div className={styles.inspStatic}>
-                <dt>FORMAT</dt>
-                <dd>1.78:1 · 24 FPS</dd>
+                <dt>MODE</dt>
+                <dd>WITH YOUR TEAM</dd>
               </div>
               <div>
-                <dt>ACTIVE</dt>
+                <dt>PHASE</dt>
                 <dd className="text-signal">
                   <ScrambleText text={clipLabel(cur)} trigger="change" />
-                </dd>
-              </div>
-              <div>
-                <dt>IN</dt>
-                <dd>
-                  <ScrambleText text={tcAt(cur.clip[0])} trigger="change" />
-                </dd>
-              </div>
-              <div>
-                <dt>OUT</dt>
-                <dd>
-                  <ScrambleText text={tcAt(cur.clip[1])} trigger="change" />
                 </dd>
               </div>
             </dl>
@@ -176,9 +164,9 @@ export function EditStage() {
 
           <ProgramMonitor step={step} end={end} tcRef={monTcRef} />
 
-          {/* A1 programme meters (xl), driven by the waveform under the playhead */}
+          {/* team-load meters (xl), driven by the team lane under the playhead */}
           <div className={styles.meters} aria-hidden="true">
-            <span className={styles.meterLabel}>A1</span>
+            <span className={styles.meterLabel}>TEAM</span>
             <div className={styles.meterPair}>
               {[0, 1].map((c) => (
                 <span key={c} className={styles.meter}>
@@ -192,7 +180,7 @@ export function EditStage() {
                 </span>
               ))}
             </div>
-            <span className={styles.meterLabel}>L R</span>
+            <span className={styles.meterLabel}>LOAD</span>
           </div>
         </div>
 

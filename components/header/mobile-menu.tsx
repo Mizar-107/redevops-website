@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from "react"
 import * as Dialog from "@radix-ui/react-dialog"
 import { cn } from "@/lib/utils"
-import { NAV, reelLabel, type SectionId } from "@/lib/sections"
+import { NAV, sectionLabel, type SectionId } from "@/lib/sections"
 import { CALENDLY_URL, CONTACT_MAILTO, PRIMARY_CTA_LABEL } from "@/lib/contact"
 import { CtaLink } from "@/components/motion/cta-link"
 import { Hairline } from "@/components/motion/hairline"
@@ -255,7 +255,7 @@ export function MobileMenu({ active, className }: MobileMenuProps) {
                         >
                           <span className="mm-num" aria-hidden="true">
                             <span className="mm-head" />
-                            {l.reel}
+                            {l.num}
                           </span>
                           <span className="mm-mask">
                             <span className="mm-label">{l.label}</span>
@@ -289,7 +289,7 @@ export function MobileMenu({ active, className }: MobileMenuProps) {
                     icon="mail"
                     onClick={() => setOpen(false)}
                   >
-                    Email Recep
+                    Email us
                   </CtaLink>
                 </div>
                 <div className="mm-late mm-foot" style={{ "--mi": 2 } as CSSProperties}>
@@ -297,7 +297,7 @@ export function MobileMenu({ active, className }: MobileMenuProps) {
                   {/* "you are here": the reel under the playhead when the menu opened */}
                   <span className="mm-here" aria-hidden="true">
                     <i />
-                    {reelLabel(active)}
+                    {sectionLabel(active)}
                   </span>
                 </div>
               </div>
@@ -358,7 +358,7 @@ function NoJsMenu({ className }: { className?: string }) {
                   <a href={l.href} className="mm-link">
                     <span className="mm-num" aria-hidden="true">
                       <span className="mm-head" />
-                      {l.reel}
+                      {l.num}
                     </span>
                     <span className="mm-mask">
                       <span className="mm-label">{l.label}</span>
@@ -374,7 +374,7 @@ function NoJsMenu({ className }: { className?: string }) {
               {PRIMARY_CTA_LABEL}
             </CtaLink>
             <CtaLink href={CONTACT_MAILTO} variant="secondary" size="lg" icon="mail">
-              Email Recep
+              Email us
             </CtaLink>
           </div>
         </div>

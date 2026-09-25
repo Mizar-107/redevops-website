@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import { DUR_MS } from "@/lib/motion/tokens"
 import { ViewfinderFrame } from "@/components/motion/viewfinder-frame"
 import type { RevealEventDetail } from "@/components/motion/motion-provider"
-import { END_LOG, STEPS, clipLabel, pad2, stepCount, tcAt, type StepIndex } from "./process-data"
+import { END_LOG, STEPS, pad2, planBar, stepCount, type StepIndex } from "./process-data"
 import styles from "./process.module.css"
 
 /** Run-log typing speed (characters per second). */
@@ -20,7 +20,7 @@ const slotsFor = (step: StepIndex, end: boolean): Slots => [STEPS[step].log[0], 
 type ProgramMonitorProps = {
   step: StepIndex
   end: boolean
-  /** timecode readout (top-right); written per frame by the stage via textContent */
+  /** plan-progress readout (top-right); written per frame by the stage via textContent */
   tcRef?: Ref<HTMLSpanElement>
 }
 
@@ -138,17 +138,13 @@ export function ProgramMonitor({ step, end, tcRef }: ProgramMonitorProps) {
     <div ref={monRef} className={cn("vf-host", styles.monitor)} data-reveal="custom" aria-hidden="true">
       <ViewfinderFrame always />
       <div className={styles.screen}>
-        {/* broadcast guides: action-safe 5%, title-safe 10%, centre cross */}
-        <span className={styles.actionSafe} />
-        <span className={styles.titleSafe} />
-        <span className={styles.cross} />
 
         <span className={styles.pgm}>
           <span className={styles.pgmDot} />
-          PGM
+          NOW
         </span>
         <span ref={tcRef} className={styles.tc}>
-          {tcAt(0)}
+          {planBar(0)}
         </span>
 
         <div className={styles.safe}>
@@ -164,7 +160,7 @@ export function ProgramMonitor({ step, end, tcRef }: ProgramMonitorProps) {
                   <div className={styles.meta}>
                     <Icon className={styles.icon} strokeWidth={1.5} />
                     <span className={styles.metaCount}>{stepCount(s.index)}</span>
-                    <span className={styles.metaClip}>{clipLabel(s)}</span>
+                    <span className={styles.metaClip}>{s.lane}</span>
                   </div>
                   <div className={styles.titleMatte}>
                     <div className={styles.titleIn}>{s.title}</div>

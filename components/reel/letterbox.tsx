@@ -2,7 +2,7 @@
 
 import { useImperativeHandle, useRef, type Ref } from "react"
 import { cn } from "@/lib/utils"
-import { reelLabel } from "@/lib/sections"
+import { sectionLabel } from "@/lib/sections"
 import { Hairline } from "@/components/motion/hairline"
 import { ScrambleText } from "@/components/motion/scramble-text"
 import styles from "./reel.module.css"
@@ -26,7 +26,7 @@ export type LetterboxProps = {
 const pad2 = (n: number) => String(n).padStart(2, "0")
 
 /**
- * The 2.39:1 letterbox. Top and bottom ink bars whose inner edges are the throughline hairline.
+ * The widescreen frame. Top and bottom ink bars whose inner edges are the throughline hairline.
  * The top bar carries the reel HUD, the bottom bar the four chapter buttons (the only focusable
  * or announced part; everything else is aria-hidden).
  */
@@ -65,13 +65,13 @@ export function Letterbox({ chapter, chapters, onJump, onChapterFocus, ref }: Le
 
   return (
     <div ref={rootRef} className={styles.lb}>
-      {/* top bar: REEL 02 · SERVICES ……… SC 0N/04 */}
+      {/* top bar: 01 / SERVICES ……… 0N / 04 */}
       <div className={styles.lbTop} aria-hidden="true">
         <div className={styles.lbFill} />
         <div className={styles.lbEdge}>
           <div className={cn("shell", styles.hudRow, "font-mono text-hud uppercase")}>
-            <b>{reelLabel("services")}</b>
-            <ScrambleText text={`SC ${pad2(chapter + 1)}/${pad2(chapters.length)}`} trigger="change" />
+            <b>{sectionLabel("services")}</b>
+            <ScrambleText text={`${pad2(chapter + 1)} / ${pad2(chapters.length)}`} trigger="change" />
           </div>
           <Hairline draw="none" className={styles.lbRule} />
         </div>

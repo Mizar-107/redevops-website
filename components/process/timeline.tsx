@@ -4,7 +4,7 @@ import { useEffect, useId, useImperativeHandle, useRef, type CSSProperties, type
 import { cn } from "@/lib/utils"
 import { clamp, mulberry32 } from "@/lib/motion/math"
 import { ViewfinderFrame } from "@/components/motion/viewfinder-frame"
-import { RULER_MAJORS, STEPS, jumpLabel, pad2, tcAt, type StepIndex } from "./process-data"
+import { RULER_MAJORS, STEPS, jumpLabel, pad2, planBar, rulerLabel, type StepIndex } from "./process-data"
 import styles from "./process.module.css"
 
 /* ------------------------------------------------------------------ A1 waveform (pure, seeded) */
@@ -128,7 +128,7 @@ export function Timeline({ step, end, onJump, handleRef, tcRef }: TimelineProps)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // DOM (and tab) order is step order V1 → V3; CSS `order` stacks V3 on top, like an NLE.
+  // DOM (and tab) order is step order; CSS `order` stacks the last phase on top.
   const laneOrder = (i: number) => ({ order: 2 + (STEPS.length - 1 - i) })
 
   return (
@@ -137,11 +137,11 @@ export function Timeline({ step, end, onJump, handleRef, tcRef }: TimelineProps)
         {/* track headers */}
         <div className={styles.tlHeads} aria-hidden="true">
           <div className={cn(styles.rowMarker, styles.headCell)}>
-            <span className="text-paper-mute">SEQ</span>
+            <span className="text-paper-mute">PLAN</span>
           </div>
           <div className={cn(styles.rowRuler, styles.headCell)}>
             <span ref={tcRef} className={styles.tlTc}>
-              {tcAt(0)}
+              {planBar(0)}
             </span>
           </div>
           {STEPS.map((s) => (
@@ -151,13 +151,13 @@ export function Timeline({ step, end, onJump, handleRef, tcRef }: TimelineProps)
               style={laneOrder(s.index)}
               data-on={step === s.index ? "" : undefined}
             >
-              <span className={styles.trackName}>{s.track}</span>
+              <span className={styles.trackName}>{s.lane}</span>
               <span className={styles.trackDot} />
             </div>
           ))}
           <div className={cn(styles.rowAudio, styles.headCell)}>
-            <span className={styles.trackName}>A1</span>
-            <span className="text-paper-mute">· your team</span>
+            <span className={styles.trackName}>TEAM</span>
+            <span className="text-paper-mute">· yours</span>
           </div>
         </div>
 
@@ -186,7 +186,7 @@ export function Timeline({ step, end, onJump, handleRef, tcRef }: TimelineProps)
                 )}
                 style={{ left: `${x * 100}%` }}
               >
-                {tcAt(x)}
+                {rulerLabel(i)}
               </span>
             ))}
             <span className={styles.render} />
