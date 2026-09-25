@@ -3,7 +3,6 @@
 import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react"
 import { LazyMotion, MotionConfig, domAnimation, motionValue, useMotionValue, type MotionValue } from "framer-motion"
 import { useReducedMotionSafe } from "@/hooks/use-motion-pref"
-import { introRemaining } from "@/lib/motion/pref"
 
 export type Chrome = {
   /** 0..1 — how far the widescreen letterbox is engaged. Written only by the Services reel. */
@@ -115,12 +114,16 @@ function MotionBoot() {
     booted = true
     html.setAttribute("data-ready", "")
 
-    // Latch the end of the intro window (hero choreography ends ≈ t0 + 2.6s; keep a margin).
-    const introDone = window.setTimeout(() => html.setAttribute("data-intro-done", ""), introRemaining(3600))
-
+    // Only structural additions of ELEMENTS can bring new reveal/loop nodes. The site writes
+    // textContent every scroll frame (OSD timecode, program monitor…), which must not trigger scans.
     let queued = false
-    const mo = new MutationObserver(() => {
+    const mo = new MutationObserver((records) => {
       if (queued) return
+      const relevant = records.some((r) => {
+        for (const n of r.addedNodes) if (n.nodeType === 1) return true
+        return false
+      })
+      if (!relevant) return
       queued = true
       requestAnimationFrame(() => {
         queued = false
@@ -129,12 +132,27 @@ function MotionBoot() {
     })
     mo.observe(document.body, { childList: true, subtree: true })
 
+    // Keyboard focus must never land inside content that is still hidden by the reveal system:
+    // reveal the focused element's unrevealed ancestors instantly.
+    const onFocusIn = (ev: FocusEvent) => {
+      let el = ev.target instanceof Element ? ev.target : null
+      while (el) {
+        if (el.hasAttribute("data-reveal") && !el.hasAttribute("data-inview")) {
+          io.unobserve(el)
+          ioTail.unobserve(el)
+          reveal(el, true)
+        }
+        el = el.parentElement
+      }
+    }
+    document.addEventListener("focusin", onFocusIn)
+
     return () => {
-      window.clearTimeout(introDone)
       io.disconnect()
       ioTail.disconnect()
       loopIO.disconnect()
       mo.disconnect()
+      document.removeEventListener("focusin", onFocusIn)
     }
   }, [])
   return null

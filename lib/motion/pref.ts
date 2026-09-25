@@ -42,7 +42,7 @@ function ensureWiring() {
   const onChange = () => {
     const stored = readStored()
     if (stored === "on" || stored === "off") return
-    el.setAttribute("data-motion", mql.matches ? "reduce" : "full")
+    applyMotion(mql.matches ? "reduce" : "full")
   }
   mql.addEventListener("change", onChange)
   teardown = () => {
@@ -68,7 +68,38 @@ export function setMotion(on: boolean): void {
   } catch {
     /* private mode etc. — still apply for this page view */
   }
-  html()?.setAttribute("data-motion", on ? "full" : "reduce")
+  applyMotion(on ? "full" : "reduce")
+}
+
+/**
+ * Flip html[data-motion] live without losing the reader's place.
+ * - The pinned stages (Services 360svh, Process 240svh) exist only under motion "full", so the page
+ *   height changes by thousands of px; native scroll anchoring can't compensate (the anchor sits in
+ *   the wrapper that collapsed). So: remember the top-level block under the header and how far into
+ *   it the reader is, flip, force layout, and scroll back to the same relative place.
+ * - Switching ON after the intro window latches html[data-intro-done], so intro-timed CSS animations
+ *   land on their final frame instead of replaying.
+ */
+function applyMotion(mode: MotionMode): void {
+  const el = html()
+  if (!el || el.getAttribute("data-motion") === mode) return
+  if (mode === "full" && introRemaining(3600) === 0) el.setAttribute("data-intro-done", "")
+  const LINE = 96 // just below the fixed header / scroll-padding-top
+  let anchor: { node: HTMLElement; frac: number } | null = null
+  for (const node of document.querySelectorAll<HTMLElement>("main > section[id], body > footer[id], footer#credits")) {
+    const r = node.getBoundingClientRect()
+    if (r.bottom > LINE && r.height > 0) {
+      anchor = { node, frac: (LINE - r.top) / r.height }
+      break
+    }
+  }
+  el.setAttribute("data-motion", mode)
+  if (anchor) {
+    const r = anchor.node.getBoundingClientRect() // forces style + layout under the new mode
+    const want = LINE - anchor.frac * r.height
+    // "instant": motion "full" enables scroll-behavior: smooth, which would animate the correction
+    window.scrollBy({ top: r.top - want, behavior: "instant" as ScrollBehavior })
+  }
 }
 
 export function getIntroMode(): IntroMode {

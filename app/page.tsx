@@ -14,6 +14,9 @@ export default function LandingPage() {
   return (
     <>
       <ColdOpen />
+      {/* fixed chrome (grain, scrub OSD, MOTION pill) sits early in the DOM so the MOTION toggle is an
+          early Tab stop for motion-sensitive visitors */}
+      <ChromeLayer />
       <Header />
       <main id="main" tabIndex={-1} className="relative outline-none">
         <HeroSection />
@@ -25,7 +28,6 @@ export default function LandingPage() {
         <CtaSection />
       </main>
       <Footer />
-      <ChromeLayer />
     </>
   )
 }

@@ -3,13 +3,14 @@ const plugin = require("tailwindcss/plugin")
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ["class"],
+  // components/ui (the unused shadcn kit) is deliberately NOT scanned: it would add ~2/3 unused CSS
+  // to the render-blocking stylesheet. Scan it again if a ui component is ever imported.
   content: [
-    "./pages/**/*.{ts,tsx}",
-    "./components/**/*.{ts,tsx}",
     "./app/**/*.{ts,tsx}",
+    "./components/*.{ts,tsx}",
+    "./components/!(ui)/**/*.{ts,tsx}",
+    "./hooks/**/*.{ts,tsx}",
     "./lib/**/*.{ts,tsx}",
-    "./src/**/*.{ts,tsx}",
-    "*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     container: {

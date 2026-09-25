@@ -35,11 +35,12 @@ export function SplitText({
   wordClassName,
   id,
 }: SplitTextProps) {
-  const words = text.split(/\s+/).filter(Boolean)
+  // ASCII whitespace only: a non-breaking space (\u00A0) keeps two words in one unbreakable span
+  const words = text.split(/[ \t\n\r]+/).filter(Boolean)
   const st = staggerFor(words.length, stagger, 500)
   const accentWords = new Set<number>()
   if (accent) {
-    const aw = accent.split(/\s+/).filter(Boolean)
+    const aw = accent.split(/[ \t\n\r]+/).filter(Boolean)
     for (let i = 0; i + aw.length <= words.length; i++) {
       if (aw.every((w, k) => words[i + k] === w)) {
         aw.forEach((_, k) => accentWords.add(i + k))

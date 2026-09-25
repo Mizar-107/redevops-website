@@ -21,7 +21,7 @@ export function MotionToggle({ variant = "pill", className }: MotionToggleProps)
       aria-label="Motion effects"
       title={reduced ? "Turn motion effects on" : "Turn motion effects off"}
       onClick={() => setReduced(!reduced)}
-      className={cn("motion-toggle", variant === "pill" ? "motion-toggle-pill" : "motion-toggle-inline", className)}
+      className={cn("motion-toggle js-only", variant === "pill" ? "motion-toggle-pill" : "motion-toggle-inline", className)}
     >
       <span className="motion-toggle-dot" aria-hidden="true" />
       <span className="font-mono">MOTION</span>

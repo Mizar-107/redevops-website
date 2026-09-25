@@ -25,6 +25,18 @@
   inherits: false;
   initial-value: 83ms;
 }
+/* SplitText wipe: the clip and its gate bar both read these, animated on .wipe-host, so they can never
+   start in different frames (compositor vs main thread) and drift out of registration. */
+@property --wipe {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+@property --gate-o {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
 
 @layer base {
   :root {
@@ -134,9 +146,11 @@
   html[data-intro="skip"] {
     --hero-t0: 0ms;
   }
-  /* Latched by MotionBoot once the intro window is over: every intro-timed animation's delay is
-     now in the past, so switching MOTION back on lands on the final frame instead of replaying. */
-  html[data-intro-done] {
+  /* Latched when MOTION is switched on after the intro window: every intro-timed animation's delay is
+     now in the past, so it lands on the final frame instead of replaying. Scoped to the subtrees that
+     read --hero-t0 (a style change on <html> itself would force a whole-document recalc). */
+  html[data-intro-done] header,
+  html[data-intro-done] #home {
     --hero-t0: -10000ms;
   }
 
@@ -151,7 +165,8 @@
     color-scheme: dark;
     -webkit-text-size-adjust: 100%;
   }
-  html[data-motion="full"] {
+  /* only after hydration: the browser's own scroll to a #fragment on load must jump, not sweep the page */
+  html[data-ready][data-motion="full"] {
     scroll-behavior: smooth;
   }
   body {
@@ -611,6 +626,23 @@ html[data-motion="full"] .cta:active {
   transition-duration: 80ms;
 }
 
+/* phones: long CTA labels (the email address) wrap instead of widening the page */
+@media (max-width: 639px) {
+  .cta {
+    white-space: normal;
+    text-align: center;
+    padding-block: 0.625rem;
+  }
+  .cta-text {
+    overflow-wrap: anywhere;
+  }
+}
+
+/* controls that do nothing without JS are not rendered for no-JS visitors */
+html:not(.js) .js-only {
+  display: none !important;
+}
+
 /* ---------------------------------------------------------------- motion toggle */
 .motion-toggle {
   display: inline-flex;
@@ -619,7 +651,7 @@ html[data-motion="full"] .cta:active {
   font-size: 0.625rem;
   letter-spacing: 0.14em;
   font-weight: 500;
-  color: var(--paper-mute);
+  color: var(--paper-dim);
   transition: color 150ms linear;
 }
 .motion-toggle:hover {
@@ -739,7 +771,11 @@ html[data-ready][data-motion="full"] .shot-list:not([data-inview]) .shot-text {
     transform var(--f12) var(--ease-title) calc(var(--shot) + var(--f6));
 }
 
-/* CTA drawn border (data-reveal="custom" on .cta-drawn) */
+/* CTA drawn border (data-reveal="custom" on .cta-drawn). --d is non-inheriting: pass the CTA's delay down. */
+.cta-drawn .cta-border,
+.cta-drawn .cta-border rect {
+  --d: inherit;
+}
 html[data-ready][data-motion="full"] .cta-drawn[data-reveal]:not([data-inview]) .cta-border rect {
   stroke-dashoffset: 1;
 }
@@ -830,11 +866,39 @@ html[data-motion="full"] [data-reveal-intro="wipe"]:not(.split) {
 html[data-motion="full"] [data-reveal-intro="mask"] .wi {
   animation: rdo-mask var(--f18) var(--ease-title) calc(var(--hero-t0) + var(--wd, 0ms)) both;
 }
+html[data-motion="full"] .split[data-reveal-intro="wipe"] .wipe-host {
+  animation:
+    rdo-wipe-p var(--f24) var(--ease-cut) calc(var(--hero-t0) + var(--sd, 0ms)) both,
+    rdo-gate-o var(--f24) linear calc(var(--hero-t0) + var(--sd, 0ms)) both;
+}
 html[data-motion="full"] .split[data-reveal-intro="wipe"] .wipe-clip {
-  animation: rdo-wipe var(--f24) var(--ease-cut) calc(var(--hero-t0) + var(--sd, 0ms)) both;
+  clip-path: inset(0 calc((1 - var(--wipe)) * 100%) 0 0);
 }
 html[data-motion="full"] .split[data-reveal-intro="wipe"] .gate {
-  animation: rdo-gate var(--f24) var(--ease-cut) calc(var(--hero-t0) + var(--sd, 0ms)) both;
+  transform: translateX(calc(var(--wipe) * 100%));
+  opacity: var(--gate-o);
+}
+@keyframes rdo-wipe-p {
+  from {
+    --wipe: 0;
+  }
+  to {
+    --wipe: 1;
+  }
+}
+@keyframes rdo-gate-o {
+  0% {
+    --gate-o: 0;
+  }
+  4% {
+    --gate-o: 1;
+  }
+  96% {
+    --gate-o: 1;
+  }
+  100% {
+    --gate-o: 0;
+  }
 }
 html[data-motion="full"] .cta-drawn[data-reveal-intro] .cta-border rect {
   animation: rdo-stroke var(--f18) var(--ease-title) calc(var(--hero-t0) + var(--d, 0ms)) both;
@@ -866,6 +930,9 @@ html[data-motion="reduce"] *::after {
    Forced colours
    ===================================================================================== */
 @media (forced-colors: active) {
+  .cta-primary {
+    border: 1px solid ButtonText;
+  }
   .hairline {
     background: CanvasText;
     box-shadow: none;

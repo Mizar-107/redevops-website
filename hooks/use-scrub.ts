@@ -28,7 +28,17 @@ export function useScrub(
     if (fine && !reduced) {
       smooth.jump(raw.get())
       progress.set(raw.get())
-      const unFeed = raw.on("change", (v) => smooth.set(v))
+      // useScroll measures after mount: the first real value must JUMP (a deep link landing mid-page
+      // would otherwise spring 0 → p through every scene/letterbox in between); later values spring.
+      let seeded = false
+      const unFeed = raw.on("change", (v) => {
+        if (seeded) smooth.set(v)
+        else {
+          seeded = true
+          smooth.jump(v)
+          progress.set(v)
+        }
+      })
       const unOut = smooth.on("change", (v) => progress.set(v))
       return () => {
         unFeed()

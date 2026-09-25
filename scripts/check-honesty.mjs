@@ -14,7 +14,7 @@ import fs from "node:fs"
 import path from "node:path"
 import ts from "typescript"
 
-const ROOTS = ["components", "lib"]
+const ROOTS = ["components", "lib", "app"]
 const SKIP_DIRS = new Set(["ui", "node_modules"])
 const SKIP_FILES = new Set(["lib/utils.ts"])
 const TEXT_ATTRS = new Set([
@@ -36,6 +36,7 @@ const TEXT_ARRAY_NAMES = /(beats|tags|lines|log|items|labels|credits|faqs|steps|
 const FAIL = [
   { re: /\d+(\.\d+)?\s?%/, why: "percentage" },
   { re: /[$€£]\s?\d/, why: "currency amount" },
+  { re: /\d+(\.\d+)?\s?(percent|per cent|pct)\b/i, why: "percentage" },
   { re: /\d+(\.\d+)?\s?(x|×)\s?(faster|cheaper|fewer|more|less|quicker)/i, why: "multiplier claim" },
   { re: /\b\d+(\.\d+)?\s?(k|K|M|B|ms|hrs?|hours|days|weeks)\b/, why: "metric-like magnitude" },
 ]
@@ -49,7 +50,7 @@ const ALLOW = [
   /\bOUTCOME 0\d\b/g,
   /\bSTAGE 0\d\b/g,
   /\bSCENE [AB]\b/g,
-  /\bTC\b[^\n]*/g,
+  /\bTC\s?\d\d:\d\d:\d\d:\d\d\b/g,
   /\b\d\d:\d\d:\d\d:\d\d\b/g,
   /\b24 FPS\b/g,
   /\b2\.39:1\b/g,
@@ -60,7 +61,8 @@ const ALLOW = [
   /\bA1\b/g,
   /\bV[1-3]\b/g,
   /©/g,
-  /\b0[1-9]\b/g, // two-digit indices: 01 · SPEND, 02 SERVICES …
+  /^\s*0[1-9](\s?[·/]\s?(0[1-9]|[A-Z][A-Z &]*))?\s*$/gm, // a bare index, or index + label: "01 · SPEND", "02 / 03"
+  /^\s*(Q|CLIP |OUTCOME |STAGE |SC )?0$/gm, // JSX text fragment before a computed index: "Q0{i+1}"
 ]
 
 function* walk(dir) {

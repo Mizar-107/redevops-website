@@ -7,7 +7,9 @@ import { fms } from "@/lib/motion/tokens"
 import { useReducedMotionSafe } from "@/hooks/use-motion-pref"
 import type { RevealEventDetail } from "./motion-provider"
 
-const GLYPHS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/:—·"
+const GLYPHS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+/** Only letters/digits scramble: punctuation, dashes and spaces are line-break opportunities, so they stay fixed. */
+const SCRAMBLES = /[A-Za-z0-9]/
 const MAX_MS = fms(14) // 583
 
 const escapeHtml = (s: string) =>
@@ -60,7 +62,7 @@ export function ScrambleText({ text, className, trigger = "view", delay = 0, dur
           let out = ""
           for (let i = 0; i < chars.length; i++) {
             const c = chars[i]
-            if (c === " " || el >= (i + 1) * step) out += c
+            if (!SCRAMBLES.test(c) || el >= (i + 1) * step) out += c
             else out += GLYPHS[(Math.random() * GLYPHS.length) | 0]
           }
           vis.textContent = out

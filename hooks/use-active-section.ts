@@ -51,8 +51,10 @@ function wire() {
   observeAll()
   // Sections rendered later (client islands) still get observed.
   let queued = false
-  mo = new MutationObserver(() => {
+  mo = new MutationObserver((records) => {
     if (queued) return
+    // ignore text-only mutations (per-frame textContent writes elsewhere on the page)
+    if (!records.some((r) => Array.from(r.addedNodes).some((n) => n.nodeType === 1))) return
     queued = true
     requestAnimationFrame(() => {
       queued = false
