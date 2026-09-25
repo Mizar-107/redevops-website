@@ -23,7 +23,7 @@ const COPIES = [0, 1, 2, 3] as const
  */
 export function MidCtaSection() {
   return (
-    <section id="intermission" aria-labelledby="mid-cta-heading" className="relative overflow-clip py-20">
+    <section id="intermission" aria-labelledby="mid-cta-heading" className="relative overflow-clip py-20 lg:pt-[11vw]">
       <div aria-hidden="true" data-loop="" className={s.marquee}>
         <div className={s.track}>
           {COPIES.map((i) => (

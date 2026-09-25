@@ -24,16 +24,17 @@ export function Footer() {
       <CreditsCrawl />
 
       {/* post-credits: static, after the roll */}
-      <div className="shell flex flex-col items-center gap-4 pb-20 pt-10 text-center md:pb-24">
+      <div className="shell flex flex-col items-center gap-4 pb-20 pt-16 text-center md:pb-24">
         <Slate section="credits" label="POST-CREDITS" cut={null} align="center" className={cn("w-full max-w-md", s.slateFit)} />
         <CtaLink href={CALENDLY_URL} variant="ghost" size="lg" external icon="arrow">
           Still here? {PRIMARY_CTA_LABEL}
         </CtaLink>
       </div>
 
-      {/* utility footer: always static */}
+      {/* utility footer: always static. lg bottom padding keeps the last row clear of the fixed
+          chrome (MOTION pill / scrub OSD sit 20–48px above the viewport bottom at lg+) */}
       <div className="border-t border-line">
-        <div className="shell pb-8 pt-12">
+        <div className="shell pb-8 pt-12 lg:pb-[4.5rem]">
           <div className="grid gap-10 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] lg:grid-cols-[minmax(0,1.4fr)_auto_auto] lg:gap-16">
             <div className="max-w-sm">
               <a href="#home" className="lm-host inline-flex min-h-[44px] items-center gap-2.5 font-semibold tracking-[-0.02em] text-paper">
@@ -63,7 +64,7 @@ export function Footer() {
             </nav>
 
             <div className="flex flex-col items-start gap-1">
-              <span className="font-mono text-hud uppercase text-paper-mute">Email</span>
+              <span className="font-mono text-slate uppercase text-paper-mute">Email</span>
               <a href={CONTACT_MAILTO} className={cn("text-sm", s.navLink)}>
                 <span className={s.navText}>{CONTACT_EMAIL}</span>
               </a>
@@ -71,9 +72,9 @@ export function Footer() {
             </div>
           </div>
 
-          <div className="mt-10 flex flex-col gap-2 border-t border-line pt-6 text-xs text-paper-mute md:flex-row md:items-center md:gap-3">
+          <div className="mt-10 flex flex-col gap-2 border-t border-line pt-6 text-xs text-paper-dim md:flex-row md:items-center md:gap-3">
             <p>&copy; {year} ReDevOps. All rights reserved.</p>
-            <span aria-hidden="true" className="hidden md:inline">
+            <span aria-hidden="true" className="hidden text-paper-mute md:inline">
               ·
             </span>
             <p>Built for clarity — no fake logos, no invented metrics.</p>

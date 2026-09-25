@@ -6,15 +6,15 @@ import { cn } from "@/lib/utils"
 import { formatTC, scrollFrames } from "@/lib/motion/math"
 import { DUR, EASE } from "@/lib/motion/tokens"
 import { useReducedMotionSafe } from "@/hooks/use-motion-pref"
-import type { RevealEventDetail } from "@/components/motion/motion-provider"
 
 const ZERO = formatTC(0)
 
 /**
  * "END OF REEL · TC hh:mm:ss:ff" (aria-hidden). SSR shows 00:00:00:00; on the client the timecode is
  * the reel's full length — the same value the scrub OSD reads at the very bottom of the page. The
- * first time it scrolls into view it rolls up from zero (f24, title); afterwards it tracks page-height
- * changes silently. Written to textContent, never through React state.
+ * first time it scrolls into view it rolls up from zero (f24, title; not when it was already on screen
+ * at load, nor under reduced motion); afterwards it tracks page-height changes silently. Written to
+ * textContent, never through React state.
  */
 export function EndTimecode({ className }: { className?: string }) {
   const rootRef = useRef<HTMLSpanElement>(null)
@@ -46,13 +46,24 @@ export function EndTimecode({ className }: { className?: string }) {
       })
       stop = () => ctl.stop()
     }
-    const onReveal = (e: Event) => {
-      if ((e as CustomEvent<RevealEventDetail>).detail?.instant) settle()
-      else roll()
+    // Own observer, not MotionBoot's reveal: this sits in the last few px of the page, inside the
+    // reveal observer's −8% bottom margin, so an rdo:reveal would never arrive.
+    // data-inview="instant" (MotionBoot: on screen at hydration) still means "no animation".
+    let io: IntersectionObserver | undefined
+    if (root.getAttribute("data-rolled")) settle()
+    else {
+      io = new IntersectionObserver(
+        (entries) => {
+          if (!entries.some((e) => e.isIntersecting)) return
+          io?.disconnect()
+          root.setAttribute("data-rolled", "")
+          if (root.getAttribute("data-inview") === "instant") settle()
+          else roll()
+        },
+        { threshold: 0.9 },
+      )
+      io.observe(root)
     }
-
-    if (root.getAttribute("data-inview")) settle()
-    else root.addEventListener("rdo:reveal", onReveal, { once: true })
 
     let raf = 0
     const refresh = () => {
@@ -64,7 +75,7 @@ export function EndTimecode({ className }: { className?: string }) {
     window.addEventListener("resize", refresh, { passive: true })
 
     return () => {
-      root.removeEventListener("rdo:reveal", onReveal)
+      io?.disconnect()
       stop?.()
       ro.disconnect()
       window.removeEventListener("resize", refresh)

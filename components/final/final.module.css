@@ -41,6 +41,16 @@
   pointer-events: none;
 }
 
+/* 0-height marker whose row the horizon streak sits on (SignalField horizonRef) */
+.horizonMark {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4.5rem);
+  height: 0;
+  pointer-events: none;
+}
+
 /* the foundation slate rule (flex 1 1 auto) squeezes the label at phone width */
 .slateFit :global(.slate-rule) {
   flex-basis: 0;
@@ -318,6 +328,15 @@ html[data-motion="full"] .sting:not([data-state]) .labStandby {
   transform-origin: 0 50%;
   pointer-events: none;
 }
+/* energised core while it travels (faded out by the flight itself, so it lands as the plain hairline) */
+.flyer::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--signal-hot);
+  box-shadow: 0 0 10px 1px rgba(124, 244, 255, 0.75);
+  opacity: 0;
+}
 
 /* ---------------------------------------------------------------- booking CTA */
 /* still (no JS / reduced / MOTION off): the underline is lit from the start */
@@ -386,7 +405,7 @@ html:not([data-motion="full"]) .book :global(.cta-glow) {
   display: grid;
   overflow: clip;
   font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 0.5625rem;
+  font-size: 0.625rem;
   line-height: 1.2;
   letter-spacing: 0.14em;
   font-weight: 500;
@@ -415,11 +434,16 @@ html:not([data-motion="full"]) .book :global(.cta-glow) {
   position: relative;
 }
 html[data-motion="full"] .crawl {
-  height: 60svh;
+  height: 70svh;
   min-height: 22rem;
   overflow: clip;
   -webkit-mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent);
   mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent);
+}
+@media (min-width: 640px) {
+  html[data-motion="full"] .crawl {
+    height: 60svh;
+  }
 }
 /* still: the column sits at its natural position (beats the inline scroll-linked transform) */
 html:not([data-motion="full"]) .crawlCol {
@@ -442,7 +466,12 @@ html:not([data-motion="full"]) .crawlCol {
   }
 }
 .names li + li {
-  margin-top: 0.35rem;
+  margin-top: 0.2rem;
+}
+@media (min-width: 640px) {
+  .names li + li {
+    margin-top: 0.35rem;
+  }
 }
 
 /* ---------------------------------------------------------------- utility footer */
@@ -481,4 +510,14 @@ html:not([data-motion="full"]) .crawlCol {
 }
 .navLink:focus-visible .navText::after {
   transform: none;
+}
+
+/* ---------------------------------------------------------------- forced colours */
+@media (forced-colors: active) {
+  .flash,
+  .scrim,
+  .flyer::before,
+  .letter::after {
+    display: none;
+  }
 }

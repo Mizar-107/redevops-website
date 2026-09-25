@@ -1,8 +1,9 @@
 "use client"
 
 import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react"
-import { MotionConfig, motionValue, useMotionValue, type MotionValue } from "framer-motion"
+import { LazyMotion, MotionConfig, domAnimation, motionValue, useMotionValue, type MotionValue } from "framer-motion"
 import { useReducedMotionSafe } from "@/hooks/use-motion-pref"
+import { introRemaining } from "@/lib/motion/pref"
 
 export type Chrome = {
   /** 0..1 — how far the widescreen letterbox is engaged. Written only by the Services reel. */
@@ -21,12 +22,16 @@ export function MotionProvider({ children }: { children: ReactNode }) {
   const letterbox = useMotionValue(0)
   const chrome = useMemo(() => ({ letterbox }), [letterbox])
   return (
-    <MotionConfig reducedMotion={reduced ? "always" : "never"}>
-      <ChromeContext.Provider value={chrome}>
-        <MotionBoot />
-        {children}
-      </ChromeContext.Provider>
-    </MotionConfig>
+    // LazyMotion + m.* components with the domAnimation feature set only: no layout-projection
+    // engine in the bundle. `strict` makes any stray full `motion.*` component throw in dev.
+    <LazyMotion features={domAnimation} strict>
+      <MotionConfig reducedMotion={reduced ? "always" : "never"}>
+        <ChromeContext.Provider value={chrome}>
+          <MotionBoot />
+          {children}
+        </ChromeContext.Provider>
+      </MotionConfig>
+    </LazyMotion>
   )
 }
 
@@ -47,19 +52,37 @@ function MotionBoot() {
       el.setAttribute("data-inview", instant ? "instant" : "1")
       el.dispatchEvent(new CustomEvent<RevealEventDetail>("rdo:reveal", { detail: { instant } }))
     }
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (!e.isIntersecting) continue
-          // Tall elements can never reach a 35% ratio; accept a 30%-of-viewport visible slice too.
-          if (e.intersectionRatio >= 0.35 || e.intersectionRect.height >= window.innerHeight * 0.3) {
-            io.unobserve(e.target)
-            reveal(e.target, false)
-          }
+    const onEntries = (obs: IntersectionObserver) => (entries: IntersectionObserverEntry[]) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue
+        // Tall elements can never reach a 35% ratio; accept a 30%-of-viewport visible slice too.
+        // Short elements that are fully visible always count.
+        if (
+          e.intersectionRatio >= 0.35 ||
+          e.intersectionRect.height >= window.innerHeight * 0.3 ||
+          (e.intersectionRatio > 0.98 && e.boundingClientRect.height > 0)
+        ) {
+          obs.unobserve(e.target)
+          reveal(e.target, false)
         }
-      },
-      { threshold: [0, 0.1, 0.2, 0.35, 0.5, 1], rootMargin: "0px 0px -8% 0px" },
-    )
+      }
+    }
+    const thresholds = [0, 0.1, 0.2, 0.35, 0.5, 0.99, 1]
+    const io: IntersectionObserver = new IntersectionObserver((entries) => onEntries(io)(entries), {
+      threshold: thresholds,
+      rootMargin: "0px 0px -8% 0px",
+    })
+    // Elements in the last stretch of the document can never cross the -8% bottom inset (the page
+    // can't scroll far enough), so they are observed without it.
+    const ioTail: IntersectionObserver = new IntersectionObserver((entries) => onEntries(ioTail)(entries), {
+      threshold: thresholds,
+    })
+    const observe = (el: Element) => {
+      const docBottom = document.documentElement.scrollHeight
+      const bottom = el.getBoundingClientRect().bottom + window.scrollY
+      if (bottom > docBottom - window.innerHeight * 0.12) ioTail.observe(el)
+      else io.observe(el)
+    }
     const loopIO = new IntersectionObserver((entries) => {
       for (const e of entries) e.target.toggleAttribute("data-offscreen", !e.isIntersecting)
     })
@@ -79,7 +102,7 @@ function MotionBoot() {
             return
           }
         }
-        io.observe(el)
+        observe(el)
       })
       document.querySelectorAll("[data-loop]").forEach((el) => {
         if (seen.has(el)) return
@@ -91,6 +114,9 @@ function MotionBoot() {
     scan()
     booted = true
     html.setAttribute("data-ready", "")
+
+    // Latch the end of the intro window (hero choreography ends ≈ t0 + 2.6s; keep a margin).
+    const introDone = window.setTimeout(() => html.setAttribute("data-intro-done", ""), introRemaining(3600))
 
     let queued = false
     const mo = new MutationObserver(() => {
@@ -104,7 +130,9 @@ function MotionBoot() {
     mo.observe(document.body, { childList: true, subtree: true })
 
     return () => {
+      window.clearTimeout(introDone)
       io.disconnect()
+      ioTail.disconnect()
       loopIO.disconnect()
       mo.disconnect()
     }

@@ -141,6 +141,10 @@ export function MobileMenu({ active, className }: MobileMenuProps) {
     const el = document.getElementById(id)
     if (!el) return
     el.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" })
+    // Move the sequential focus starting point to the section (like a native anchor jump would),
+    // without letting focus() fight the smooth scroll.
+    if (!el.hasAttribute("tabindex")) el.setAttribute("tabindex", "-1")
+    el.focus({ preventScroll: true })
     try {
       history.replaceState(null, "", `#${id}`)
     } catch {

@@ -119,7 +119,7 @@ export function SignalField({ preset, progress, avoidRef, bladeRef, horizonRef, 
       g.l1Left = (br.left - cr.left) / g.cssW
       g.l1W = br.width / g.cssW
     }
-    if (preset === "hero") root.style.setProperty("--hy", `${((g.horizon / h) * 100).toFixed(3)}%`)
+    if (preset === "hero" || hr) root.style.setProperty("--hy", `${((g.flareY / h) * 100).toFixed(3)}%`)
     const lines = preset === "horizon" ? 18 : g.cssW >= 1024 ? 48 : g.cssW >= 768 ? 32 : 20
     const segs = g.mobile ? 96 : 160
     eng?.resize(w, h, dpr, lines, segs)

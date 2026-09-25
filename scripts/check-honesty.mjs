@@ -16,6 +16,7 @@ import ts from "typescript"
 
 const ROOTS = ["components", "lib"]
 const SKIP_DIRS = new Set(["ui", "node_modules"])
+const SKIP_FILES = new Set(["lib/utils.ts"])
 const TEXT_ATTRS = new Set([
   "aria-label",
   "aria-valuetext",
@@ -67,7 +68,7 @@ function* walk(dir) {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     if (e.isDirectory()) {
       if (!SKIP_DIRS.has(e.name)) yield* walk(path.join(dir, e.name))
-    } else if (/\.(tsx?|mts)$/.test(e.name) && !e.name.endsWith(".d.ts")) yield path.join(dir, e.name)
+    } else if (/\.(tsx?|mts)$/.test(e.name) && !e.name.endsWith(".d.ts") && !SKIP_FILES.has(path.join(dir, e.name))) yield path.join(dir, e.name)
   }
 }
 

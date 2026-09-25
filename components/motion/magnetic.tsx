@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, type ReactNode } from "react"
-import { motion, useSpring } from "framer-motion"
+import { m, useSpring } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { clamp } from "@/lib/motion/math"
 import { SPRING } from "@/lib/motion/tokens"
@@ -54,8 +54,8 @@ export function Magnetic({ children, strength = 0.22, max = 8, className }: Magn
   }, [reduced, strength, max, x, y])
 
   return (
-    <motion.span ref={ref} className={cn("inline-flex items-center", className)} style={{ x, y }}>
+    <m.span ref={ref} className={cn("inline-flex items-center", className)} style={{ x, y }}>
       {children}
-    </motion.span>
+    </m.span>
   )
 }

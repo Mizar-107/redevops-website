@@ -1,7 +1,7 @@
 "use client"
 
 import { Fragment, useEffect, useRef, type CSSProperties, type RefObject } from "react"
-import { motion, useTransform } from "framer-motion"
+import { m, useTransform } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { Hairline } from "@/components/motion/hairline"
 import { ScrambleText } from "@/components/motion/scramble-text"
@@ -119,7 +119,7 @@ export function HeroSection() {
     >
       <SignalField preset="hero" progress={progress} avoidRef={h1Ref} bladeRef={l1Ref} horizonRef={horizonRef} />
 
-      <motion.div
+      <m.div
         className={cn("gutter relative z-10 min-h-[100svh]", s.content, s.scrollOut)}
         style={{ ...TIMING, opacity: fade }}
       >
@@ -139,7 +139,7 @@ export function HeroSection() {
         </div>
 
         <h1 id="hero-title" ref={h1Ref} className={cn("text-display", s.title)}>
-          <motion.span className={cn("block", s.scrollOut)} style={{ y: y1 }}>
+          <m.span className={cn("block", s.scrollOut)} style={{ y: y1 }}>
             <span ref={l1Ref} className={s.l1}>
               <span className={cn("split", s.layer, s.real)} data-reveal-intro="mask">
                 <span className="sr-only select-none">{L1_TEXT}</span>
@@ -158,9 +158,9 @@ export function HeroSection() {
                 <span className={s.head} />
               </span>
             </span>
-          </motion.span>{" "}
+          </m.span>{" "}
           <span ref={horizonRef} className={s.horizon} data-horizon="" aria-hidden="true" />
-          <motion.span className={cn("block", s.scrollOut, s.l2)} style={{ y: y2 }}>
+          <m.span className={cn("block", s.scrollOut, s.l2)} style={{ y: y2 }}>
             <SplitText
               as="span"
               text="Ship with confidence."
@@ -170,7 +170,7 @@ export function HeroSection() {
               accent="confidence."
               className="block"
             />
-          </motion.span>
+          </m.span>
         </h1>
 
         <div className="max-w-[62rem]">
@@ -216,7 +216,7 @@ export function HeroSection() {
             </p>
           </Reveal>
         </div>
-      </motion.div>
+      </m.div>
     </section>
   )
 }

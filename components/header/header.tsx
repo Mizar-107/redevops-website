@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useRef, useState, type CSSProperties } from "react"
-import { motion, useMotionValueEvent, useScroll, useSpring, useTransform } from "framer-motion"
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react"
+import { m, useMotionValueEvent, useScroll, useSpring, useTransform } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { NAV, type SectionId } from "@/lib/sections"
 import { CALENDLY_URL, CONTACT_MAILTO, PRIMARY_CTA_LABEL_SHORT } from "@/lib/contact"
@@ -59,10 +59,11 @@ html[data-motion="full"] .hdr-mask-i{animation:rdo-mask var(--f12) var(--ease-ti
 .hdr-link[aria-current] .hdr-label{color:var(--paper)}
 .hdr-link[aria-current] .hdr-num{color:var(--signal)}
 
-.hdr-ph{position:absolute;left:.25rem;right:.25rem;bottom:7px;height:2px;pointer-events:none}
+.hdr-list{position:relative}
+.hdr-ph{position:absolute;left:0;bottom:7px;width:100px;height:2px;pointer-events:none;transform-origin:0 50%}
 .hdr-ph-line{position:absolute;inset:0;background:var(--signal);box-shadow:0 0 12px rgba(34,211,238,.35);transform-origin:0 50%;transition:transform var(--f9) var(--ease-title),opacity var(--f6) linear}
 .hdr-ph[data-off] .hdr-ph-line{transform:scaleX(0);opacity:0;transition:transform var(--f6) var(--ease-exit),opacity var(--f6) linear}
-.hdr-ph-head{position:absolute;left:calc(.25rem - 2px);bottom:5px;width:5px;height:6px;pointer-events:none}
+.hdr-ph-head{position:absolute;left:-2px;bottom:5px;width:5px;height:6px;pointer-events:none}
 .hdr-ph-head>i{position:absolute;inset:0;border-style:solid;border-width:3px 0 3px 5px;border-color:transparent transparent transparent var(--signal-hot);transform-origin:0 50%;transition:opacity var(--f6) linear,transform var(--f6) var(--ease-exit)}
 .hdr-ph-head[data-off]>i{opacity:0;transform:scale(0)}
 html[data-motion="full"] .hdr-ph[data-enter] .hdr-ph-line{animation:rdo-draw-x var(--f9) var(--ease-title) backwards}
@@ -80,7 +81,7 @@ const NAV_IDS = new Set<SectionId>(NAV.map((n) => n.id))
 const SCROLLED_AT = 24
 
 /** Where the nav playhead is parked. `epoch` bumps when it returns from a non-nav section, which
- *  gives it a fresh layoutId (it draws in place instead of sliding from a stale position). */
+ *  re-keys it (it draws in place instead of sliding from a stale position). */
 type Playhead = { id: SectionId; epoch: number; enter: boolean; on: boolean }
 
 function nextPlayhead(ph: Playhead | null, active: SectionId): Playhead | null {
@@ -100,14 +101,45 @@ function NavLinks({ active, reduced }: { active: SectionId; reduced: boolean }) 
   const next = nextPlayhead(ph, active)
   if (next !== ph) setPh(next) // derived state; re-renders only on section boundaries
 
-  const layoutTransition = reduced ? { duration: 0 } : { type: "spring" as const, ...SPRING.hud }
+  // One playhead for the whole nav: x / scaleX (of a 100px base) follow the parked link on the
+  // SPRING.hud spring. Measured from the DOM, so no layout-projection engine is needed.
+  const listRef = useRef<HTMLUListElement>(null)
+  const x = useSpring(0, SPRING.hud)
+  const sx = useSpring(0, SPRING.hud)
+  const placed = useRef(false)
+
+  useLayoutEffect(() => {
+    const list = listRef.current
+    if (!list || !next) return
+    const place = (instant: boolean) => {
+      const link = list.querySelector<HTMLElement>(`a[href="#${next.id}"]`)
+      if (!link) return
+      const lr = list.getBoundingClientRect()
+      const r = link.getBoundingClientRect()
+      // the line spans the link's inner box (0.25rem padding either side)
+      const pad = 4
+      const tx = r.left - lr.left + pad
+      const ts = Math.max(0, r.width - pad * 2) / 100
+      if (instant) {
+        x.jump(tx)
+        sx.jump(ts)
+      } else {
+        x.set(tx)
+        sx.set(ts)
+      }
+    }
+    place(reduced || next.enter || !placed.current)
+    placed.current = true
+    const ro = new ResizeObserver(() => place(true))
+    ro.observe(list)
+    return () => ro.disconnect()
+  }, [next, reduced, x, sx])
 
   return (
     <nav aria-label="Primary" className="hidden md:block">
-      <ul className="flex items-center gap-3 lg:gap-7">
+      <ul ref={listRef} className="hdr-list flex items-center gap-3 lg:gap-7">
         {NAV.map((l, i) => {
           const current = active === l.id
-          const parked = next && next.id === l.id ? next : null
           return (
             <li
               key={l.href}
@@ -119,34 +151,32 @@ function NavLinks({ active, reduced }: { active: SectionId; reduced: boolean }) 
                   <span className="hdr-num" aria-hidden="true">{l.reel}</span>
                   <span className="hdr-label">{l.label}</span>
                 </span>
-                {parked && (
-                  <>
-                    <motion.span
-                      layoutId={`nav-playhead-${parked.epoch}`}
-                      transition={layoutTransition}
-                      className="hdr-ph"
-                      aria-hidden="true"
-                      data-enter={parked.enter ? "" : undefined}
-                      data-off={parked.on ? undefined : ""}
-                    >
-                      <span className="hdr-ph-line" />
-                    </motion.span>
-                    <motion.span
-                      layoutId={`nav-playhead-head-${parked.epoch}`}
-                      transition={layoutTransition}
-                      className="hdr-ph-head"
-                      aria-hidden="true"
-                      data-enter={parked.enter ? "" : undefined}
-                      data-off={parked.on ? undefined : ""}
-                    >
-                      <i />
-                    </motion.span>
-                  </>
-                )}
               </a>
             </li>
           )
         })}
+        {next && (
+          <li aria-hidden="true" className="contents">
+            <m.span
+              key={`line-${next.epoch}`}
+              className="hdr-ph"
+              style={{ x, scaleX: sx }}
+              data-enter={next.enter ? "" : undefined}
+              data-off={next.on ? undefined : ""}
+            >
+              <span className="hdr-ph-line" />
+            </m.span>
+            <m.span
+              key={`head-${next.epoch}`}
+              className="hdr-ph-head"
+              style={{ x }}
+              data-enter={next.enter ? "" : undefined}
+              data-off={next.on ? undefined : ""}
+            >
+              <i />
+            </m.span>
+          </li>
+        )}
       </ul>
     </nav>
   )
@@ -164,10 +194,10 @@ function FilmStrip({ reduced }: { reduced: boolean }) {
 
   return (
     <div className="hdr-strip" aria-hidden="true">
-      <motion.span className="hdr-sprockets" style={{ x: reduced ? 0 : sprockets }} />
+      <m.span className="hdr-sprockets" style={{ x: reduced ? 0 : sprockets }} />
       <span className="hdr-base" />
-      <motion.span className="hdr-fill hairline" style={{ scaleX: reduced ? scrollYProgress : sprung }} />
-      <motion.span className="hdr-head" style={{ x: reduced ? headRaw : headSprung }} />
+      <m.span className="hdr-fill hairline" style={{ scaleX: reduced ? scrollYProgress : sprung }} />
+      <m.span className="hdr-head" style={{ x: reduced ? headRaw : headSprung }} />
     </div>
   )
 }
@@ -211,7 +241,7 @@ export function Header() {
   }, [letterbox])
 
   return (
-    <motion.header
+    <m.header
       ref={ref}
       layoutRoot
       className="hdr pointer-events-none fixed inset-x-0 top-0 z-50 h-16"
@@ -272,6 +302,6 @@ export function Header() {
           </span>
         </div>
       </div>
-    </motion.header>
+    </m.header>
   )
 }

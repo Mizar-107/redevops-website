@@ -22,18 +22,11 @@ const r1 = (v: number) => Math.round(v * 10) / 10
 const poly = (pts: Pt[]) => pts.map((p, i) => `${i ? "L" : "M"}${r1(p.x)} ${r1(p.y)}`).join("")
 
 /** the site's glow recipe: halo (same path, wide, 14%) under a 1.5px core, round caps, no filters */
-function Trace({ d, dashed }: { d: string; dashed?: boolean }) {
+function Trace({ d }: { d: string }) {
   return (
     <>
       <path d={d} stroke={SIGNAL} strokeOpacity={0.14} strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" />
-      <path
-        d={d}
-        stroke={SIGNAL}
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeDasharray={dashed ? "3 3" : undefined}
-      />
+      <path d={d} stroke={SIGNAL} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
     </>
   )
 }
@@ -187,6 +180,8 @@ const MOTIFS: readonly Motif[] = [
 ]
 const idx = (k: number) => String(k + 1).padStart(2, "0")
 const CUT_TO = `CUT TO · ${section("final").cut.toUpperCase()}`
+/** fraction of the f18 flight after which the underline takes over from the flyer */
+const LAND_AT = 0.8
 
 export type RecapStingProps = {
   /** a data-reveal="custom" element; its reveal (the section is about half in view) rolls the sting */
@@ -233,6 +228,7 @@ export function RecapSting({ sentinelRef, targetRef, onLand, className }: RecapS
     let io: IntersectionObserver | undefined
     let timer: ReturnType<typeof setTimeout> | undefined
     let flight: Animation | undefined
+    let core: Animation | undefined
     const underline = () => targetRef.current?.querySelector<HTMLElement>("[data-cta-underline]") ?? null
 
     /** skip to the end: last motif, button lit (reduced motion, already in view at load, no target) */
@@ -258,6 +254,7 @@ export function RecapSting({ sentinelRef, targetRef, onLand, className }: RecapS
       landRef.current(true)
       flyer.style.opacity = "0"
       flight?.cancel()
+      core?.cancel()
       root.setAttribute("data-state", "done")
       requestAnimationFrame(() => requestAnimationFrame(() => (u.style.transition = "")))
     }
@@ -292,7 +289,19 @@ export function RecapSting({ sentinelRef, targetRef, onLand, className }: RecapS
         ],
         { duration: DUR_MS.f18, easing: EASE_CSS.title, fill: "both" },
       )
-      flight.onfinish = () => land(u)
+      try {
+        // hot core while travelling; gone by the time it lands, so the hand-off is hairline → hairline
+        core = flyer.animate([{ opacity: 1 }, { opacity: 0 }], {
+          duration: DUR_MS.f12,
+          easing: EASE_CSS.exit,
+          fill: "both",
+          pseudoElement: "::before",
+        })
+      } catch {
+        /* pseudo-element animation unsupported: plain hairline flight */
+      }
+      // title easing is at 99.9% of the move by 80% of its time (< 0.5px left): light the button there
+      timer = setTimeout(() => land(u), Math.round(DUR_MS.f18 * LAND_AT))
     }
 
     /** hold the single line in the monitor until the button (and its underline) is fully on screen */
@@ -346,6 +355,7 @@ export function RecapSting({ sentinelRef, targetRef, onLand, className }: RecapS
       clearTimeout(timer)
       io?.disconnect()
       flight?.cancel()
+      core?.cancel()
       flyer.style.opacity = "0"
     }
   }, [reduced, sentinelRef, targetRef])

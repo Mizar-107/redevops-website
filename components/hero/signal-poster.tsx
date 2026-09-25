@@ -55,7 +55,8 @@ const HORIZON_LINES = horizonLines()
 export function SignalPoster({ preset }: { preset: "hero" | "horizon" }) {
   const hero = preset === "hero"
   const lines = hero ? HERO_LINES : HORIZON_LINES
-  const row = hero ? "var(--hy, 50%)" : "78%"
+  // the horizon preset follows the measured streak row too (set when the field has a horizonRef)
+  const row = hero ? "var(--hy, 50%)" : "var(--hy, 78%)"
   return (
     <div aria-hidden="true" className="absolute inset-0" data-signal-poster="">
       <div

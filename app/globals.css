@@ -134,6 +134,11 @@
   html[data-intro="skip"] {
     --hero-t0: 0ms;
   }
+  /* Latched by MotionBoot once the intro window is over: every intro-timed animation's delay is
+     now in the past, so switching MOTION back on lands on the final frame instead of replaying. */
+  html[data-intro-done] {
+    --hero-t0: -10000ms;
+  }
 
   * {
     @apply border-border;
@@ -160,6 +165,10 @@
   :focus-visible {
     outline: 2px solid var(--signal) !important;
     outline-offset: 3px;
+  }
+  /* programmatic landing targets (skip link → main, mobile-menu jumps → section) are not controls */
+  :is(main, section)[tabindex="-1"]:focus-visible {
+    outline: none !important;
   }
   .font-mono {
     font-feature-settings: "tnum" 1, "zero" 1;

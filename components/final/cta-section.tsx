@@ -31,6 +31,7 @@ export function CtaSection() {
   const contentRef = useRef<HTMLDivElement>(null)
   const sentinelRef = useRef<HTMLSpanElement>(null)
   const ctaRowRef = useRef<HTMLDivElement>(null)
+  const horizonRef = useRef<HTMLSpanElement>(null)
   const [lit, setLit] = useState(false)
   const { progress: entry } = useScrub(sectionRef, ["start end", "start start"])
 
@@ -46,7 +47,7 @@ export function CtaSection() {
       aria-labelledby="final-title"
       className="vignette relative flex min-h-[100svh] items-center overflow-clip py-24 md:py-28"
     >
-      <SignalField preset="horizon" progress={entry} avoidRef={contentRef} />
+      <SignalField preset="horizon" progress={entry} avoidRef={contentRef} horizonRef={horizonRef} />
       <div aria-hidden="true" className={s.scrim} />
       <span ref={sentinelRef} aria-hidden="true" data-reveal="custom" className={s.sentinel} />
 
@@ -115,6 +116,8 @@ export function CtaSection() {
               <CopyEmail selectTargetId="final-email" />
             </div>
           </div>
+          {/* the horizon streak's row: a floor of light under the booking row, never through type */}
+          <span ref={horizonRef} aria-hidden="true" className={s.horizonMark} />
         </div>
       </div>
     </section>
