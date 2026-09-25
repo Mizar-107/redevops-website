@@ -1,5 +1,6 @@
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import Link from "next/link"
+import { Slate } from "@/components/motion/slate"
+import { SplitText } from "@/components/motion/split-text"
+import { Hairline } from "@/components/motion/hairline"
 import { CONTACT_MAILTO } from "@/lib/contact"
 
 const faqs = [
@@ -30,37 +31,37 @@ const faqs = [
   },
 ]
 
+/** STUB (owned by W8). */
 export function FaqSection() {
   return (
-    <section id="faq" className="py-16 md:py-24">
-      <div className="container mx-auto px-4 md:px-6">
-        <div className="text-center max-w-3xl mx-auto">
-          <p className="text-sm font-semibold uppercase tracking-widest text-cyan-400/90 mb-3">FAQ</p>
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-balance">Questions teams usually ask</h2>
-          <p className="mt-4 text-lg text-gray-400">
+    <section id="faq" aria-labelledby="faq-title" className="relative py-24 md:py-32">
+      <div className="shell lg:grid lg:grid-cols-[5fr_7fr] lg:gap-16">
+        <div>
+          <Slate section="faq" />
+          <h2 id="faq-title" className="mt-6 text-h2 text-balance">
+            <SplitText text="Questions teams usually ask" />
+          </h2>
+          <p className="mt-6 text-lede text-paper-dim">
             Straight answers. Still unsure?{" "}
-            <Link
-              href={CONTACT_MAILTO}
-              className="text-cyan-400 hover:underline underline-offset-4"
-            >
+            <a href={CONTACT_MAILTO} className="text-signal underline-offset-4 hover:underline">
               Email Recep
-            </Link>
+            </a>
             .
           </p>
         </div>
-        <div className="mt-12 max-w-3xl mx-auto">
-          <Accordion type="single" collapsible className="w-full">
-            {faqs.map((faq, index) => (
-              <AccordionItem key={index} value={`item-${index}`} className="border-gray-800">
-                <AccordionTrigger className="text-left text-lg font-semibold hover:text-cyan-400 hover:no-underline py-5">
-                  {faq.question}
-                </AccordionTrigger>
-                <AccordionContent className="text-gray-400 text-base leading-relaxed pb-5">{faq.answer}</AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
+        <div className="mt-10 lg:mt-0">
+          {faqs.map((f, i) => (
+            <details key={f.question} name="faq" className="group border-b border-line">
+              <summary className="flex cursor-pointer list-none items-baseline gap-4 py-6 text-lg font-semibold [&::-webkit-details-marker]:hidden">
+                <span className="font-mono text-hud text-paper-mute">Q0{i + 1}</span>
+                {f.question}
+              </summary>
+              <p className="pb-6 text-paper-dim">{f.answer}</p>
+            </details>
+          ))}
         </div>
       </div>
+      <Hairline draw="center" className="absolute inset-x-0 bottom-0" />
     </section>
   )
 }
