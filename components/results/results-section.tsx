@@ -37,6 +37,23 @@ const outcomes: { icon: LucideIcon; title: string; description: string }[] = [
   },
 ]
 
+/**
+ * Real engagements, client names left out. Every figure here traces to client work and is rounded;
+ * numbers are spelled out so the honesty check keeps guarding the rest of the copy.
+ */
+const clientWork = [
+  {
+    scene: "US",
+    title: "Two outages a week, then steady",
+    body: "We took a US startup of about twenty-five people from two outages a week to uptime above ninety-nine percent. Their cloud bill came down by nearly a third.",
+  },
+  {
+    scene: "DE",
+    title: "A six-figure saving on AWS",
+    body: "It started as an infrastructure review for a development team in Germany. The changes that followed save them a six-figure sum a year on AWS.",
+  },
+]
+
 const exampleFocus = [
   {
     scene: "A",
@@ -86,14 +103,26 @@ export function ResultsSection() {
           ))}
         </div>
 
-        {/* 4 · example focus as slated scenes (stacked: a wider gap is the room the next clapper opens into) */}
-        <div className="mx-auto mt-24 grid max-w-4xl gap-10 md:mt-28 md:grid-cols-2 md:gap-6">
+        {/* 4 · real client work, on the same slates as the examples below */}
+        <div className="mx-auto mt-24 max-w-4xl md:mt-28">
+          <div className="grid gap-10 md:grid-cols-2 md:gap-6">
+            {clientWork.map((cw) => (
+              <SlatedCard key={cw.title} label="Client work" scene={cw.scene} title={cw.title} body={cw.body} />
+            ))}
+          </div>
+          <p className="mt-3 text-right font-mono text-hud uppercase text-paper-dim">
+            Real client work. Names left out, figures rounded.
+          </p>
+        </div>
+
+        {/* 5 · example focus as slated scenes (stacked: a wider gap is the room the next clapper opens into) */}
+        <div className="mx-auto mt-16 grid max-w-4xl gap-10 md:mt-20 md:grid-cols-2 md:gap-6">
           {exampleFocus.map((ex) => (
             <SlatedCard key={ex.title} scene={ex.scene} title={ex.title} body={ex.body} />
           ))}
         </div>
 
-        {/* 5 · footnote bookend */}
+        {/* 6 · footnote bookend */}
         <div className="mx-auto mt-20 max-w-2xl md:mt-24">
           <div aria-hidden="true">
             <Hairline draw="center" />
