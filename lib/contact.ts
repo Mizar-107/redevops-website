@@ -1,7 +1,7 @@
 /** Shared contact + CTA constants for the marketing site. */
 
-export const SITE_URL = "https://redevops.dev"
-export const CONTACT_EMAIL = "eksiertu@gmail.com"
+export const SITE_URL = "https://www.redevops.net"
+export const CONTACT_EMAIL = "ertu@redevops.net"
 export const CALENDLY_URL = "https://calendly.com/eksiertu/30min"
 
 export const PRIMARY_CTA_LABEL = "Book a free consultation"

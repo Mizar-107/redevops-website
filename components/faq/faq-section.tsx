@@ -30,9 +30,18 @@ const faqs = [
       "AWS, Google Cloud, and Azure, plus the common Kubernetes, container, and CI platforms. Lean spend and reliable delivery work the same everywhere, so we adapt to your stack instead of forcing a rewrite.",
   },
   {
-    question: "How do we get started?",
+    question: "How do you charge?",
     answer:
-      "Book a free 30-minute consultation on Calendly, or email eksiertu@gmail.com with a short note about your stack and what hurts most: cost, reliability, or delivery. We'll reply with next steps.",
+      "One flat monthly fee that covers an agreed block of hours, with monitoring and on-call included. There is no minimum term, so you can cancel any month. Work beyond the block needs your written approval first, so the bill never surprises you.",
+  },
+  {
+    question: "Can we start with something small?",
+    answer:
+      "Yes. Most teams start with an infrastructure review: two weeks on read-only access, then a written list of what is risky or costing too much, a prioritized plan for the next three months, and one quick fix as a pull request. Our next three reviews are free in exchange for a short case study.",
+  },
+  {
+    question: "How do we get started?",
+    answer: `Book a free 30-minute consultation on Calendly, or email ${CONTACT_EMAIL} with a short note about your stack and what hurts most: cost, reliability, or delivery. We'll reply with next steps.`,
   },
 ]
 

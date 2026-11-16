@@ -50,7 +50,7 @@ the booking button's underline.
 
 Primary CTAs:
 - **Calendly**: book a free 30-minute consultation: https://calendly.com/eksiertu/30min
-- **Email**: eksiertu@gmail.com
+- **Email**: ertu@redevops.net
 
 Shared constants live in `lib/contact.ts`.
 
