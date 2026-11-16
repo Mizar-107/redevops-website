@@ -37,7 +37,7 @@ const faqs = [
   {
     question: "Can we start with something small?",
     answer:
-      "Yes. Most teams start with an infrastructure review: two weeks on read-only access, then a written list of what is risky or costing too much, a prioritised plan for the next three months, and one quick fix as a pull request. Our next three reviews are free in exchange for a short case study.",
+      "Yes. Most teams start with an infrastructure review: two weeks on read-only access, then a written list of what is risky or costing too much, a prioritized plan for the next three months, and one quick fix as a pull request. Our next three reviews are free in exchange for a short case study.",
   },
   {
     question: "How do we get started?",
